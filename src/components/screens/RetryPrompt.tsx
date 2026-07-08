@@ -17,9 +17,9 @@ interface RetryPromptProps {
 //
 // Structurally the same mic + skip/type-instead row as TermPrompt (S2), but
 // the label above the mic is a permanent "Tap to try again" rather than
-// TermPrompt's first-visit-only, localStorage-gated "Press and hold to
-// answer." hint. Kept as its own component instead of a TermPrompt prop so
-// that one-time-hint logic doesn't leak into this always-shown label.
+// TermPrompt's first-visit-only, localStorage-gated "Tap to answer." hint.
+// Kept as its own component instead of a TermPrompt prop so that
+// one-time-hint logic doesn't leak into this always-shown label.
 export default function RetryPrompt({
   onMicPress,
   onSkip,

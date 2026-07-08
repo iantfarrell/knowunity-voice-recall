@@ -54,7 +54,7 @@ export default function TermPrompt({
           transition={soft}
           className="text-center text-sm text-text-secondary"
         >
-          Press and hold to answer.
+          Tap to answer.
         </motion.p>
       )}
 
