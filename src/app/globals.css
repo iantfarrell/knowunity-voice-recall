@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — sourced directly from design.md (Knowunity brand file,
+ * Figma "Untitled" file key 4CzAQPPzgUG7zMkTC9aviE). Dark mode only, one
+ * mode in the source file. Do not add hex values here that aren't in
+ * design.md (or, for a specific committed frame, directly read from that
+ * frame via the Figma MCP — see comments below for the one exception).
+ */
+@theme {
+  /* Backgrounds */
+  --color-background-page: #090c18;
+  --color-background-surface: #22242f;
+  --color-background-floating: #3d3d3d99;
+  --color-background-stacking: #ffffff1a;
+  --color-background-input: #ffffff1a;
+  --color-background-inverse: #f4f2ff;
+
+  /* Text */
+  --color-text-primary: #f4f2ff;
+  --color-text-secondary: #f5f3ffad;
+  --color-text-disabled: #ffffff66;
+  --color-text-inverse: #090c18;
+  /* Sourced directly from Figma node 110:7707 ("end summary", S10 session
+     summary) via the Figma MCP get_design_context/get_variable_defs calls —
+     the frame's "Gray 2" style, a real value from the file, not in the
+     extracted design.md token table. Used for the per-term sublabel row
+     ("Got it first try"), the "0" XP value on revealed/skipped rows, and
+     the "THIS SESSION"/"N TERMS TO STRENGTHEN" section labels — distinct
+     from --color-text-secondary (#f5f3ffad, translucent white) since this
+     is a flat, darker gray. */
+  --color-text-tertiary: #4f4f4f;
+
+  /* Borders */
+  --color-border-default: #ffffff1a;
+  --color-border-subtle: #ffffff1a;
+  --color-highlight-border: #9d85ff;
+  /* Sourced directly from Figma node 110:7707 ("end summary") — the frame's
+     "Gray 3" style, used for the neutral (revealed/skipped/strengthen)
+     chip borders. Distinct from --color-border-default (#ffffff1a,
+     translucent white) since this is a flat, solid mid-gray. */
+  --color-border-neutral: #828282;
+
+  /* Brand & accent */
+  --color-accent-brand-bold: #9178e6;
+  --color-accent-coral-bold: #fb7e5b;
+  --color-accent-blue-bold: #5fa0fc;
+  --color-accent-blue-onbold: #06173b;
+  /* Sourced directly from Figma node 62:8581 (the XP-counter chip text) via
+     the Figma MCP get_design_context call — a real value from the file,
+     not in the extracted design.md token table (see design.md Gaps). */
+  --color-accent-blue-onsubtle: #7ba8f2;
+  --color-pro-bold: #f5b53d;
+  --color-pro-onbold: #2a1d04;
+  --color-homie-inkwell: #9178e6;
+  --color-homie-eyes: #0a0a0a;
+  /* Sourced directly from Figma node 67:3932 (S8, the student's
+     transcript-echo bubble) via the Figma MCP get_design_context call — real
+     values from the file, not in the extracted design.md token table (see
+     design.md Gaps). Distinct from background-surface (#22242f) and
+     feedback-success-bold (#00c386), which is why these are separate tokens
+     rather than reuses. */
+  --color-background-transcript: #2f313d;
+  --color-highlight-recognized: #6fcf97;
+
+  /* Interactive */
+  --color-interactive-primary: #f4f2ff;
+  --color-interactive-onprimary: #090c18;
+  --color-interactive-secondary: #ffffff1a;
+  --color-interactive-onsecondary: #f4f2ff;
+  --color-interactive-pressed: #ffffff1a;
+  --color-interactive-disabled: #ffffff1a;
+
+  /* Feedback */
+  --color-feedback-info: #2e89f9;
+  --color-feedback-success-bold: #00c386;
+  --color-feedback-success-onbold: #0a1f18;
+  --color-feedback-error: #ff6b6b;
+  --color-feedback-error-onbold: #2a0808;
+  /* Sourced directly from Figma node 68:3634 (S9, "first hint" — the
+     PARTIALLY RIGHT feedback bubble and HINT badge/bubble) via the Figma
+     MCP get_design_context call — real values from the file, not in the
+     extracted design.md token table (see design.md Gaps). Used with
+     Tailwind's opacity modifier (e.g. `bg-feedback-partial/15`) to
+     reproduce the frame's translucent fills/borders from one base hex each. */
+  --color-feedback-partial: #7661d9;
+  --color-feedback-warning: #f2c94c;
+  --color-feedback-warning-chip: #f2994a;
+  /* Sourced directly from Figma node 68:7899 ("correct answer" — the
+     CORRECT feedback bubble) via the Figma MCP get_design_context call — a
+     real value from the file, not in the extracted design.md token table.
+     Border/badge-text reuses the existing --color-highlight-recognized
+     (#6fcf97) since it's the exact same green; this token is only for the
+     bubble/chip's translucent fill base, which is a distinct darker green. */
+  --color-feedback-correct: #219653;
+  /* Sourced directly from Figma node 110:7707 ("end summary") — the frame's
+     "Green 2" style, used only for the per-term "+XP" delta text on
+     nailed/hinted rows. Distinct from --color-feedback-correct (#219653,
+     used for badges/circle fills) and --color-feedback-success-bold
+     (#00c386, unused elsewhere) — this is the specific green that frame
+     uses for that one piece of text. */
+  --color-feedback-xp-positive: #27ae60;
+
+  /* Radius (design.md §3a) */
+  --radius-200: 8px;
+  --radius-400: 16px;
+  --radius-600: 24px;
+  --radius-800: 32px;
+  --radius-900: 36px;
+
+  /* Font family */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-background-page);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+/* Full-screen app shell, safe-area aware (prototype-rules.md "Safe areas"). */
+.app-shell {
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 390px;
+  margin-inline: auto;
+  position: relative;
+  overflow: hidden;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Visible focus states for keyboard / assistive tech (prototype-rules.md
+   Accessibility baseline). */
+:focus-visible {
+  outline: 2px solid var(--color-highlight-border);
+  outline-offset: 2px;
+}
