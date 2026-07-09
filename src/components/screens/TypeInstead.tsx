@@ -13,9 +13,10 @@ import { ArrowUpIcon, MicIcon } from "@/components/icons";
 // leading "+" button, trailing in-pill mic icon, and a static
 // images/Keyboard.png mockup below. Replaced with a simpler chat-style bar
 // per a user-supplied reference screenshot: a standalone circular mic
-// button (tap to switch back to voice) beside a pill text field with an
-// embedded send button — no "+" affordance, no keyboard mockup image,
-// since the field is a real, functioning <input>.
+// button (tap to switch back to voice) beside a pill text field with a
+// bare send-arrow icon (no button background) embedded in it — no "+"
+// affordance, no keyboard mockup image, since the field is a real,
+// functioning <input>.
 interface TypeInsteadProps {
   onSubmit?: (answer: string) => void;
   onUseVoiceInstead?: () => void;
@@ -62,7 +63,7 @@ export default function TypeInstead({
           type="button"
           aria-label="Submit answer"
           onClick={handleSubmit}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-background-floating"
+          className="flex h-11 w-11 shrink-0 items-center justify-center"
         >
           {/* Nudged 8px right of the button's visual center per feedback —
               sits closer to the pill's trailing edge than dead-center. */}
