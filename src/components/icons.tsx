@@ -175,6 +175,31 @@ export function ScheduleIcon({ className }: { className?: string }) {
   );
 }
 
+// The "type instead" chat-input bar's send button (TypeInstead.tsx) — a
+// plain up arrow. Not sourced from a Figma node: TypeInstead.tsx was
+// rebuilt to match a user-supplied reference screenshot of a chat-style
+// input (standalone mic button + pill field with an embedded send button)
+// rather than the original Figma frame, so this glyph is hand-drawn to
+// match that reference, following this file's existing stroke convention.
+export function ArrowUpIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M12 19V5M12 5L6 11M12 5L18 11"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 // Matches the Figma-exported XP bolt exactly (node 63:3550): a solid
 // currentColor bolt with a second, inset bolt-shaped cutout punched through
 // it (filled with the page background token) to create the outlined look —
