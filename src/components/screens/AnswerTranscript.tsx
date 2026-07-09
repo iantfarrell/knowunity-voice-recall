@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { soft } from "@/lib/motion";
+import { UserIcon } from "@/components/icons";
 import type { TermAttempt } from "@/lib/session-data";
 
 // User instruction for this screen: once the transcript bubble has shown,
@@ -50,10 +51,19 @@ function splitHighlighted(text: string, spans: string[] | undefined) {
 // auto-advance timer.
 //
 // Shows the student's own (mocked) words, so its bubble shape mirrors
-// Knowie's — small corner on the bottom-RIGHT instead of bottom-LEFT — and
-// it has no avatar, unlike TermBubble. Rendered via SessionShell's
-// `afterBubble` slot (same slot S7 uses) since Figma places it in the same
-// middleContent column as the term bubble, not the bottom control area.
+// Knowie's — small corner on the bottom-RIGHT instead of bottom-LEFT,
+// pointing toward the student's own avatar on that side (mirroring
+// TermBubble/AnswerFeedback's left-side avatar + bottom-LEFT small corner).
+// Rendered via SessionShell's `afterBubble` slot (same slot S7 uses) since
+// Figma places it in the same middleContent column as the term bubble, not
+// the bottom control area.
+//
+// feedback.md's "[M] Chat bubble attribution" fix: user-testers couldn't
+// quickly tell which bubbles were theirs vs. Knowie's — this bubble used to
+// render with no avatar at all, just extra left padding to roughly line up
+// with Knowie's indentation. Now it's a proper right-aligned "sent" bubble
+// with its own avatar (UserIcon in a filled circle, same 24px size as
+// Knowie's avatar) sitting to its right, tail already pointing that way.
 export default function AnswerTranscript({ attempt, onComplete }: AnswerTranscriptProps) {
   const prefersReducedMotion = useReducedMotion();
   const chunks = splitHighlighted(attempt.transcript, attempt.highlightedSpans);
@@ -83,7 +93,7 @@ export default function AnswerTranscript({ attempt, onComplete }: AnswerTranscri
       initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={soft}
-      className="flex justify-start py-3 pl-16 pr-4"
+      className="flex items-end justify-end gap-2 px-4 py-3"
     >
       <div className="max-w-[294px] rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-md bg-background-transcript p-4">
         <p className="text-xs font-semibold tracking-wide text-accent-brand-bold">
@@ -106,6 +116,17 @@ export default function AnswerTranscript({ attempt, onComplete }: AnswerTranscri
           )}
           &rdquo;
         </p>
+      </div>
+
+      {/* The student's avatar — same 24px (h-6 w-6) circle size as Knowie's
+          own avatar (TermBubble/AnswerFeedback), and the same off-white
+          circle color baked into that avatar's PNG (background-inverse,
+          #f4f2ff — design.md's "light background on a dark screen" token),
+          so the two avatars read as one consistent pairing rather than two
+          different circle colors. text-inverse for the glyph matches
+          Knowie's own near-black eyes on that same light circle. */}
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-background-inverse">
+        <UserIcon className="h-3.5 w-3.5 text-text-inverse" />
       </div>
     </motion.div>
   );

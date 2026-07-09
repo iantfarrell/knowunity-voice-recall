@@ -200,6 +200,31 @@ export function ArrowUpIcon({ className }: { className?: string }) {
   );
 }
 
+// The student's own avatar glyph — feedback.md's "[M] Chat bubble
+// attribution" fix: testers couldn't quickly tell which bubbles were theirs
+// vs. Knowie's, so the transcript bubble (AnswerTranscript.tsx) now gets a
+// placeholder-icon avatar of its own, matching this file's existing
+// stroke-icon convention rather than pulling in a new image asset (this
+// mocked prototype has no real per-student photo/initials to source from).
+export function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth={1.8} />
+      <path
+        d="M4.5 20c0-3.5 3.4-6 7.5-6s7.5 2.5 7.5 6"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 // Matches the Figma-exported XP bolt exactly (node 63:3550): a solid
 // currentColor bolt with a second, inset bolt-shaped cutout punched through
 // it (filled with the page background token) to create the outlined look —
