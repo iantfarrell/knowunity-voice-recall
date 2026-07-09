@@ -23,7 +23,9 @@ import { ArrowUpIcon, MicIcon } from "@/components/icons";
 // content instead of scrolling), its corners settle from a full pill into
 // a fixed radius, and the send icon gets a filled blue circle behind it
 // (bare/inactive-looking while empty, "active" once there's real text) —
-// both driven off the same `hasText` check.
+// both driven off the same `hasText` check. The blue circle itself is a
+// fixed 30x30 (Figma-specced), centered inside a larger 44px tap target so
+// the touch area doesn't shrink along with the visual circle.
 interface TypeInsteadProps {
   onSubmit?: (answer: string) => void;
   onUseVoiceInstead?: () => void;
@@ -89,14 +91,19 @@ export default function TypeInstead({
         <button
           type="button"
           aria-label="Submit answer"
+          // 44px tap target (accessibility minimum) even though the visual
+          // circle inside is only the Figma-specced 30x30 — centered inside
+          // this hit area rather than filling it.
           onClick={handleSubmit}
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
-            hasText ? "bg-accent-blue-bold" : ""
-          }`}
+          className="flex h-11 w-11 shrink-0 items-center justify-center"
         >
-          {/* Nudged 8px right of the button's visual center per feedback —
-              sits closer to the pill's trailing edge than dead-center. */}
-          <ArrowUpIcon className="h-5 w-5 translate-x-2 text-text-primary" />
+          <span
+            className={`flex h-[30px] w-[30px] items-center justify-center rounded-full ${
+              hasText ? "bg-accent-blue-bold" : ""
+            }`}
+          >
+            <ArrowUpIcon className="h-4 w-4 text-text-primary" />
+          </span>
         </button>
       </div>
     </div>
