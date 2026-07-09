@@ -91,6 +91,11 @@ When implementation starts, update this file with real build/test/lint commands 
 - sprint-context.md · design.md · SPEC.md · prototype-rules.md · motion-guide.md
 - reference/ : screenshots of real Knowunity screens (sample UI to match)
 - public/images : mascot, avatars
+- feedback.md (lives outside this repo, at
+  `/Users/ianfarrell/Documents/Claude/Projects/Knowunity/feedback.md`) : my
+  prioritized fix-list from user testing. Read it before making fixes.
+  Change only what it lists — and treat anything it marks as working as
+  off-limits; don't touch it.
 
 ## Definition of done
 - Matches my Figma frames. Uses tokens from design.md + Inter Variable; dark mode.
