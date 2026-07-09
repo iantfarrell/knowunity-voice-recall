@@ -102,6 +102,7 @@ export default function Home() {
   const isRetryScreen =
     (screen === "recording" ||
       screen === "playbackReview" ||
+      screen === "typeInstead" ||
       screen === "processing" ||
       screen === "secondTranscript" ||
       screen === "secondFeedback") &&
@@ -249,11 +250,26 @@ export default function Home() {
           // (Figma node 63:3787) as a recorded one (PlaybackReview's
           // onSubmit, above) — same ProcessingAnswer component, same 4s cap,
           // same hardcoded transcript afterwards, since session-data.ts's
-          // mocked script doesn't distinguish how the answer arrived.
-          <TypeInstead
-            onSubmit={() => setScreen("processing")}
-            onUseVoiceInstead={() => setScreen("termPrompt")}
-          />
+          // mocked script doesn't distinguish how the answer arrived. Reached
+          // after the first hint too (Figma nodes matching the user's two
+          // "type instead after hint" reference screenshots) — in that case
+          // isRetryScreen is already true, so the same
+          // ProcessingAnswer/isRetryScreen branch below hands off to the
+          // retry-path processing screen (Figma node 68:7731) instead of the
+          // first-attempt one, with no extra wiring needed here. Same pt-4
+          // treatment as "recording"/"playbackReview" above once the bubble
+          // stack is present, and "Use voice instead" returns to whichever
+          // mic screen matches — RetryPrompt (feedbackHint) on a retry,
+          // TermPrompt on the very first attempt — same pattern as
+          // RecordingActive's onCancel below.
+          <div className={isRetryScreen ? "pt-4" : undefined}>
+            <TypeInstead
+              onSubmit={() => setScreen("processing")}
+              onUseVoiceInstead={() =>
+                setScreen(hasSeenFeedback ? "feedbackHint" : "termPrompt")
+              }
+            />
+          </div>
         )}
 
         {screen === "feedbackHint" && (
