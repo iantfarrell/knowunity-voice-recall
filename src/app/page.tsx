@@ -245,10 +245,13 @@ export default function Home() {
         )}
 
         {screen === "typeInstead" && (
+          // Submitting a typed answer joins the same S7 processing screen
+          // (Figma node 63:3787) as a recorded one (PlaybackReview's
+          // onSubmit, above) — same ProcessingAnswer component, same 4s cap,
+          // same hardcoded transcript afterwards, since session-data.ts's
+          // mocked script doesn't distinguish how the answer arrived.
           <TypeInstead
-            onSubmit={() =>
-              console.log("submit tapped — S7 processing not built yet")
-            }
+            onSubmit={() => setScreen("processing")}
             onUseVoiceInstead={() => setScreen("termPrompt")}
           />
         )}
