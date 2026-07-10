@@ -57,7 +57,14 @@ export default function AnswerFeedback() {
           "Get a hint" gate, and — once tapped — the hint text itself. No
           separate bubble, no separate amber box/badge for the hint; it's
           all one Knowie message that grows in place. */}
-      <div className="max-w-[326px] rounded-tl-2xl rounded-tr-2xl rounded-bl-md rounded-br-2xl border border-feedback-partial bg-feedback-partial/15 p-4">
+      {/* max-w-[294px] matches AnswerTranscript.tsx's "YOUR ANSWER" bubble
+          exactly (user instruction) — at 326px this box (avatar+gap on the
+          LEFT) stretched all the way to the right padding edge, extending
+          32px further right than the transcript bubble above it (whose
+          avatar+gap sits on the RIGHT instead) and visually sitting under
+          that bubble's avatar. Matching widths keeps every bubble's right
+          edge aligned in one column. */}
+      <div className="max-w-[294px] rounded-tl-2xl rounded-tr-2xl rounded-bl-md rounded-br-2xl border border-feedback-partial bg-feedback-partial/15 p-4">
         <span className="inline-block rounded-lg bg-feedback-warning-chip/20 px-2 py-0.5 text-xs font-semibold tracking-wide text-feedback-warning">
           PARTIALLY RIGHT
         </span>

@@ -27,7 +27,11 @@ export default function CorrectFeedback() {
         alt=""
         className="h-6 w-6 shrink-0 rounded-full"
       />
-      <div className="max-w-[326px] rounded-tl-2xl rounded-tr-2xl rounded-bl-md rounded-br-2xl border border-highlight-recognized bg-feedback-correct/15 p-4">
+      {/* max-w-[294px] matches AnswerTranscript.tsx's "YOUR ANSWER" bubble
+          (user instruction, see AnswerFeedback.tsx's matching comment) —
+          keeps this bubble's right edge aligned with the others instead of
+          stretching under the transcript bubble's avatar above it. */}
+      <div className="max-w-[294px] rounded-tl-2xl rounded-tr-2xl rounded-bl-md rounded-br-2xl border border-highlight-recognized bg-feedback-correct/15 p-4">
         <span className="inline-block rounded-lg bg-feedback-correct/20 px-2 py-0.5 text-xs font-semibold tracking-wide text-highlight-recognized">
           CORRECT
         </span>
