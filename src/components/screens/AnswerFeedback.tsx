@@ -34,6 +34,9 @@ export default function AnswerFeedback() {
   // recall mechanic entirely (one was even marked correct doing so). Now
   // hint content only renders once the student explicitly taps "Get a
   // hint" inside the bubble — showHint is set by that tap, not a timer.
+  // The button toggles both ways (user instruction): tapping again while
+  // the hint is showing reads "Hide hint" and collapses it back to the
+  // gated state, rather than being a one-way reveal.
   // The re-attempt mic CTA (RetryPrompt, rendered independently by
   // page.tsx) is unaffected either way, so it's already on screen before
   // any hint content appears, satisfying feedback.md's "re-attempt CTA
@@ -73,11 +76,10 @@ export default function AnswerFeedback() {
         </p>
         <button
           type="button"
-          onClick={() => setShowHint(true)}
-          disabled={showHint}
+          onClick={() => setShowHint((prev) => !prev)}
           className="mt-3 inline-flex items-center rounded-full border border-feedback-partial px-4 py-2 text-sm font-semibold text-text-primary"
         >
-          {showHint ? "Hint reveal" : "Get a hint"}
+          {showHint ? "Hide hint" : "Get a hint"}
         </button>
         {showHint && (
           <p className="mt-3 text-base text-text-primary">{HINT_TEXT}</p>
