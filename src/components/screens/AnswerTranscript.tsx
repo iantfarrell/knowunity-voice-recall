@@ -93,11 +93,18 @@ export default function AnswerTranscript({ attempt, onComplete }: AnswerTranscri
       initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={soft}
-      className="flex items-end justify-end gap-2 px-4 py-3"
+      // User instruction: every box in this bubble stack should be exactly
+      // 8px (pt-2) apart — top padding only (no bottom padding) so each
+      // gap is set once, by the box that follows, rather than by two boxes'
+      // padding stacking together into a bigger gap than its neighbors.
+      className="flex items-end justify-end gap-2 px-4 pt-2"
     >
       <div className="max-w-[294px] rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-md bg-background-transcript p-4">
+        {/* feedback.md's "[S] Transcript label" fix: "TRANSCRIPT" read as a
+            raw STT debug label to user-testers, not as the student's own
+            words. "YOUR ANSWER" makes the ownership explicit. */}
         <p className="text-xs font-semibold tracking-wide text-accent-brand-bold">
-          TRANSCRIPT
+          YOUR ANSWER
         </p>
         {/* text-base (16px), not text-lg — matches the feedback/hint bubble
             body text (AnswerFeedback.tsx, CorrectFeedback.tsx) per the

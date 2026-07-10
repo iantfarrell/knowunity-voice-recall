@@ -20,7 +20,7 @@ export default function CorrectFeedback() {
       initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={soft}
-      className="flex items-end gap-2 px-4 pt-3"
+      className="flex items-end gap-2 px-4 pt-2"
     >
       <img
         src="/images/Group%202136139939.png"
