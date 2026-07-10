@@ -238,6 +238,11 @@ export default function Home() {
           // space added above it once the bubble log is present.
           <div className={isRetryScreen ? "pt-4" : undefined}>
             <PlaybackReview
+              transcript={
+                isRetryScreen
+                  ? SECOND_ATTEMPT.transcript
+                  : term.attempts[0].transcript
+              }
               onSubmit={() => setScreen("processing")}
               onRecordAgain={() => setScreen("recording")}
               onTypeInstead={() => setScreen("typeInstead")}
