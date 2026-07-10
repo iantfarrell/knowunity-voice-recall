@@ -200,6 +200,36 @@ export function ArrowUpIcon({ className }: { className?: string }) {
   );
 }
 
+// The "Get a hint" gate button's leading glyph (AnswerFeedback.tsx) — a
+// plain lightbulb, matching this file's existing stroke convention.
+// feedback.md's "[L] Hint ladder" fix: hint content used to fade in
+// automatically, which testers just parroted back as their next answer —
+// now it's hidden behind this explicit request, so the button needs its own
+// affordance glyph distinct from the hint content it unlocks.
+export function HintIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M9 18h6M10 21h4"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        strokeLinecap="round"
+      />
+      <path
+        d="M12 3a6 6 0 0 0-3.5 10.9c.6.45 1 1.15 1 1.95V16h5v-.15c0-.8.4-1.5 1-1.95A6 6 0 0 0 12 3Z"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 // The student's own avatar glyph — feedback.md's "[M] Chat bubble
 // attribution" fix: testers couldn't quickly tell which bubbles were theirs
 // vs. Knowie's, so the transcript bubble (AnswerTranscript.tsx) now gets a
