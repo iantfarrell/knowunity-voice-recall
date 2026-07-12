@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { sheet, snappy, soft } from "@/lib/motion";
 import SessionShell from "@/components/session/SessionShell";
+import SessionIntro from "@/components/screens/SessionIntro";
 import TermPrompt from "@/components/screens/TermPrompt";
 import RecordingActive from "@/components/screens/RecordingActive";
 import PlaybackReview from "@/components/screens/PlaybackReview";
@@ -17,6 +18,7 @@ import EndSummary from "@/components/screens/EndSummary";
 import { TERMS, type TermAttempt } from "@/lib/session-data";
 
 type Screen =
+  | "intro"
   | "termPrompt"
   | "recording"
   | "playbackReview"
@@ -82,7 +84,7 @@ const SECOND_ATTEMPT: Pick<TermAttempt, "transcript" | "highlightedSpans"> = {
 export default function Home() {
   const prefersReducedMotion = useReducedMotion();
   const [termIndex] = useState(0);
-  const [screen, setScreen] = useState<Screen>("termPrompt");
+  const [screen, setScreen] = useState<Screen>("intro");
   // Set once the transcript+feedback+hint bubbles have appeared for this
   // term (i.e. we've reached "feedbackHint") and never reset. Figma nodes
   // 70:4304 ("2nd attempt recording") and 108:7503 ("2nd attempt post
@@ -169,6 +171,25 @@ export default function Home() {
         center: { opacity: 1, y: 0 },
         exit: { opacity: 0, y: "100%" },
       };
+
+  // The new first screen of the prototype (SessionIntro.tsx) — same
+  // "replaces SessionShell entirely" treatment as S10/EndSummary below,
+  // since it has no header/term bubble to share either. "Let's start" is an
+  // instant top-level swap into the session, not part of the bottom-controls
+  // push/fade system further down — same precedent as EndSummary's own
+  // swap in/out of SessionShell.
+  if (screen === "intro") {
+    return (
+      <div className="app-shell bg-background-page">
+        <SessionIntro
+          onStart={() => goTo("termPrompt")}
+          onSkip={() =>
+            console.log("skip intro tapped — no other destination built yet")
+          }
+        />
+      </div>
+    );
+  }
 
   // S10 (Figma node 110:7707, "end summary") replaces SessionShell entirely
   // rather than rendering inside it — unlike every other screen so far, it
