@@ -82,8 +82,13 @@ export default function TypeInstead({
               handleSubmit();
             }
           }}
-          // Reference screenshot's placeholder copy, kept verbatim.
-          placeholder="Ask anything..."
+          // Recall-specific placeholder, not the reference screenshot's
+          // generic chat-input copy ("Ask anything...") — this field is the
+          // text fallback for explaining the term out loud, so it should
+          // read like the same prompt as the mic screen (TermPrompt.tsx's
+          // "Explain this in your own words."), not a generic assistant
+          // input.
+          placeholder="Explain in your own words..."
           autoFocus
           className="my-auto min-w-0 flex-1 resize-none bg-transparent py-1 text-base font-medium leading-snug text-text-primary placeholder:text-text-disabled focus:outline-none"
         />
