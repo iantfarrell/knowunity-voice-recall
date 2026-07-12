@@ -94,20 +94,20 @@ export default function Home() {
   // yet) and a retry, so afterBubble needs a way to tell those two cases
   // apart.
   const [hasSeenFeedback, setHasSeenFeedback] = useState(false);
-  // motion-guide.md's "screen-to-screen" recipe: "Push transitions slide in
-  // from the right; going back slides out." Previously every screen change
-  // in the bottom-controls area (children, below) was an instant state
-  // swap — only each screen's own inner content faded in on its own, with
-  // no sense of moving forward or back through the flow. `direction` is set
-  // right alongside every `setScreen` call (via the `goTo` helper) so the
-  // slide direction always matches the semantics of that specific
-  // transition — e.g. Submit/mic/Type-instead taps push forward, while
-  // Cancel/Record-again/Use-voice-instead pop back — rather than inferring
-  // it from screen order, which isn't strictly linear here (Type instead is
-  // reachable from three different screens).
-  const [direction, setDirection] = useState<"forward" | "back">("forward");
-  function goTo(next: Screen, dir: "forward" | "back" = "forward") {
-    setDirection(dir);
+  // Previously every screen change in the bottom-controls area (children,
+  // below) was an instant state swap — only each screen's own inner content
+  // faded in on its own, with no sense of moving between states at all.
+  // motion-guide.md's screen-to-screen recipe literally calls for a
+  // left/right push, but this app's header + term bubble stay fixed above
+  // the bottom-controls area while only that lower region changes — a
+  // horizontal slide there read as detached/off, since nothing else on
+  // screen moved with it (user instruction, after seeing it live). A
+  // vertical fade-up (pushVariants, below) reads as that one region
+  // settling into place instead, without implying the whole screen panned.
+  // `goTo` is kept as a thin wrapper around `setScreen` (rather than reverted
+  // to bare `setScreen` calls everywhere) so a directional treatment can be
+  // reintroduced later without re-touching every call site.
+  function goTo(next: Screen) {
     setScreen(next);
   }
   const term = TERMS[termIndex];
@@ -141,22 +141,20 @@ export default function Home() {
     screen === "secondTranscript" || screen === "secondFeedback";
 
   // Push variants for the bottom-controls area (TermPrompt, RecordingActive,
-  // PlaybackReview, RetryPrompt, the secondFeedback CTA) — a short slide +
-  // fade using `soft`, per the guide's "keep these short so the flow feels
-  // quick to tap through." Reduced-motion drops the `x` offset entirely and
-  // just crossfades, same pattern as every other entrance in this app.
+  // PlaybackReview, RetryPrompt, the secondFeedback CTA) — a short fade +
+  // rise from below using `soft`, matching the y-offset fade already used
+  // throughout this app's other entrances (e.g. EndSummary's stagger,
+  // AnswerFeedback's own `gentle` landing) rather than a horizontal slide.
+  // Same treatment regardless of forward/back, since the header/term bubble
+  // above never moves — there's nothing on screen for a left/right direction
+  // to read against. Reduced-motion drops the `y` offset entirely and just
+  // crossfades, same pattern as every other entrance in this app.
   const pushVariants = prefersReducedMotion
     ? { enter: { opacity: 0 }, center: { opacity: 1 }, exit: { opacity: 0 } }
     : {
-        enter: (dir: "forward" | "back") => ({
-          opacity: 0,
-          x: dir === "back" ? -16 : 16,
-        }),
-        center: { opacity: 1, x: 0 },
-        exit: (dir: "forward" | "back") => ({
-          opacity: 0,
-          x: dir === "back" ? 16 : -16,
-        }),
+        enter: { opacity: 0, y: 14 },
+        center: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -8 },
       };
   // TypeInstead is the one screen the guide special-cases: "The can't-speak
   // text fallback (bottom sheet). Slide up from the bottom with `sheet`...
@@ -201,7 +199,7 @@ export default function Home() {
                 <AnswerTranscript
                   attempt={term.attempts[0]}
                   onComplete={() => {
-                    goTo("feedbackHint", "forward");
+                    goTo("feedbackHint");
                     setHasSeenFeedback(true);
                   }}
                 />
@@ -220,10 +218,7 @@ export default function Home() {
                 // by any tap.
                 <ProcessingAnswer
                   onComplete={() =>
-                    goTo(
-                      isRetryScreen ? "secondTranscript" : "transcript",
-                      "forward"
-                    )
+                    goTo(isRetryScreen ? "secondTranscript" : "transcript")
                   }
                 />
               )}
@@ -241,7 +236,7 @@ export default function Home() {
                 // stack.
                 <AnswerTranscript
                   attempt={SECOND_ATTEMPT}
-                  onComplete={() => goTo("secondFeedback", "forward")}
+                  onComplete={() => goTo("secondFeedback")}
                 />
               )}
               {screen === "secondFeedback" && (
@@ -260,11 +255,10 @@ export default function Home() {
             ResizeObserver auto-scrolls on height changes (see that file),
             and `popLayout` removes the exiting element from layout flow
             immediately rather than the whole group briefly double-stacking. */}
-        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+        <AnimatePresence mode="popLayout" initial={false}>
           {screen === "termPrompt" && (
             <motion.div
               key="termPrompt"
-              custom={direction}
               variants={pushVariants}
               initial="enter"
               animate="center"
@@ -273,9 +267,9 @@ export default function Home() {
             >
               <TermPrompt
                 term={term}
-                onMicPress={() => goTo("recording", "forward")}
+                onMicPress={() => goTo("recording")}
                 onSkip={() => console.log("skip tapped — S9 not built yet")}
-                onTypeInstead={() => goTo("typeInstead", "forward")}
+                onTypeInstead={() => goTo("typeInstead")}
               />
             </motion.div>
           )}
@@ -283,7 +277,6 @@ export default function Home() {
           {screen === "recording" && (
             <motion.div
               key="recording"
-              custom={direction}
               variants={pushVariants}
               initial="enter"
               animate="center"
@@ -301,9 +294,9 @@ export default function Home() {
             >
               <RecordingActive
                 onCancel={() =>
-                  goTo(hasSeenFeedback ? "feedbackHint" : "termPrompt", "back")
+                  goTo(hasSeenFeedback ? "feedbackHint" : "termPrompt")
                 }
-                onStop={() => goTo("playbackReview", "forward")}
+                onStop={() => goTo("playbackReview")}
               />
             </motion.div>
           )}
@@ -311,7 +304,6 @@ export default function Home() {
           {screen === "playbackReview" && (
             <motion.div
               key="playbackReview"
-              custom={direction}
               variants={pushVariants}
               initial="enter"
               animate="center"
@@ -332,9 +324,9 @@ export default function Home() {
                     ? SECOND_ATTEMPT.transcript
                     : term.attempts[0].transcript
                 }
-                onSubmit={() => goTo("processing", "forward")}
-                onRecordAgain={() => goTo("recording", "back")}
-                onTypeInstead={() => goTo("typeInstead", "forward")}
+                onSubmit={() => goTo("processing")}
+                onRecordAgain={() => goTo("recording")}
+                onTypeInstead={() => goTo("typeInstead")}
               />
             </motion.div>
           )}
@@ -374,9 +366,9 @@ export default function Home() {
               className={isRetryScreen ? "pt-4" : undefined}
             >
               <TypeInstead
-                onSubmit={() => goTo("processing", "forward")}
+                onSubmit={() => goTo("processing")}
                 onUseVoiceInstead={() =>
-                  goTo(hasSeenFeedback ? "feedbackHint" : "termPrompt", "back")
+                  goTo(hasSeenFeedback ? "feedbackHint" : "termPrompt")
                 }
               />
             </motion.div>
@@ -385,7 +377,6 @@ export default function Home() {
           {screen === "feedbackHint" && (
             <motion.div
               key="feedbackHint"
-              custom={direction}
               variants={pushVariants}
               initial="enter"
               animate="center"
@@ -393,9 +384,9 @@ export default function Home() {
               transition={soft}
             >
               <RetryPrompt
-                onMicPress={() => goTo("recording", "forward")}
+                onMicPress={() => goTo("recording")}
                 onSkip={() => console.log("skip tapped — S9 not built yet")}
-                onTypeInstead={() => goTo("typeInstead", "forward")}
+                onTypeInstead={() => goTo("typeInstead")}
               />
             </motion.div>
           )}
@@ -403,7 +394,6 @@ export default function Home() {
           {screen === "secondFeedback" && (
             <motion.div
               key="secondFeedback"
-              custom={direction}
               variants={pushVariants}
               initial="enter"
               animate="center"
