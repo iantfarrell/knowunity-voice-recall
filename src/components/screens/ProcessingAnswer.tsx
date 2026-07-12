@@ -9,8 +9,12 @@ import { motion, useReducedMotion } from "motion/react";
 // waiting on a fake process.
 const MAX_PROCESSING_MS = 4000;
 
-// S7 — "Knowie is listening to your answer" (Figma node 63:3787, "Knowie
-// listening to answer"). Reached after Submit on S6 (PlaybackReview). This
+// S7 — "Knowie is thinking" (Figma node 63:3787, "Knowie listening to
+// answer" — copy changed per user instruction from the frame's original
+// "Knowie is listening to your answer" since this screen runs *after*
+// Submit, once the (mocked) transcript is already in hand; "thinking" reads
+// as judging the answer rather than still capturing audio). Reached after
+// Submit on S6 (PlaybackReview). This
 // row sits directly under the term bubble in Figma's middleContent column,
 // not in the bottom control area like S2/S6/S9 — so SessionShell renders it
 // via the `afterBubble` slot rather than as normal screen `children` (see
@@ -48,7 +52,7 @@ export default function ProcessingAnswer({ onComplete }: ProcessingAnswerProps) 
         }
         className="text-sm italic text-text-primary"
       >
-        Knowie is listening to your answer
+        Knowie is thinking
       </motion.p>
     </div>
   );
