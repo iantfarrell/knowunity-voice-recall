@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { soft } from "@/lib/motion";
+import { gentle } from "@/lib/motion";
 
 // Still S8 — the CORRECT feedback bubble that follows a retry's own
 // transcript echo (Figma node 68:7899, "correct answer"). Reached once the
@@ -9,6 +9,16 @@ import { soft } from "@/lib/motion";
 // Unlike AnswerFeedback.tsx (whose PARTIALLY RIGHT bubble is followed by a
 // second, delayed HINT bubble), Figma node 68:7899 shows only a single new
 // bubble here — no internal stagger needed.
+//
+// Entrance uses `gentle` (motion-guide.md's "Result reveal" recipe — "a
+// small spring entrance on the result card"), not the plain `soft` fade
+// every neutral chat-log bubble (the transcript echo, Knowie's term prompt)
+// uses. This is the actual payoff moment of the whole exchange; previously
+// it faded in exactly like the bubble stack around it, so the win never
+// visibly landed. RevealedFeedback.tsx uses this same recipe (per the
+// guide's "the animation is the same; the content differs" rule) so a miss
+// doesn't get a heavier or lighter treatment than a win — only different
+// color/copy.
 const FEEDBACK_TEXT =
   "Nice! You picked up on the replication of genetic content. That along with your first idea of defining mitosis answers the question fully.";
 
@@ -19,7 +29,7 @@ export default function CorrectFeedback() {
     <motion.div
       initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={soft}
+      transition={gentle}
       className="flex items-end gap-2 px-4 pt-2"
     >
       <img

@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { soft } from "@/lib/motion";
+import { gentle, soft } from "@/lib/motion";
 import { MicIcon, CheckIcon, EyeIcon, MinusIcon, ScheduleIcon } from "@/components/icons";
 
 // motion-guide.md's "end-of-session summary" recipe: stagger the lines in
@@ -19,6 +20,20 @@ const item = {
   hidden: { opacity: 0, y: 8 },
   show: { opacity: 1, y: 0, transition: soft },
 };
+// The "+100 XP" line is the actual deposit — the one payoff sprint-context.md
+// calls a retention mechanic ("XP deposits only at summary") — so it gets a
+// touch more weight than a plain list line: a `gentle` spring scale-in
+// instead of the flat opacity/y every other stagger item uses. Kept subtle
+// on purpose (no bounce beyond what `gentle`'s spring already gives, no
+// particles) per the guide's own "not confetti" instruction.
+const xpItem = {
+  hidden: { opacity: 0, y: 8, scale: 0.9 },
+  show: { opacity: 1, y: 0, scale: 1, transition: gentle },
+};
+const XP_TOTAL = 100;
+// How long the number ticks up once its stagger slot fires — short enough to
+// stay "subtle, earned," not a slot-machine spin.
+const XP_COUNT_MS = 500;
 
 // S10 — session summary (Figma node 110:7707, "end summary"). Reached "for
 // the sake of the prototype" from the retry's "Next question" CTA
@@ -97,6 +112,22 @@ function NeutralChip({ children }: { children: React.ReactNode }) {
 
 export default function EndSummary() {
   const prefersReducedMotion = useReducedMotion();
+  // Starts at the final value under reduced motion (no tick), 0 otherwise —
+  // ticked up to XP_TOTAL once the "+100 XP" line's own entrance spring
+  // finishes (see onAnimationComplete below), not on mount, so the count-up
+  // reads as following the line landing rather than racing ahead of it.
+  const [xpDisplay, setXpDisplay] = useState(prefersReducedMotion ? XP_TOTAL : 0);
+
+  function startXpCountUp() {
+    if (prefersReducedMotion) return;
+    const start = performance.now();
+    function tick(now: number) {
+      const progress = Math.min((now - start) / XP_COUNT_MS, 1);
+      setXpDisplay(Math.round(progress * XP_TOTAL));
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
 
   return (
     <motion.div
@@ -115,10 +146,13 @@ export default function EndSummary() {
           />
 
           <motion.p
-            variants={item}
+            variants={xpItem}
+            onAnimationComplete={(definition) => {
+              if (definition === "show") startXpCountUp();
+            }}
             className="text-[44px] font-black leading-[48px] tracking-[-0.44px] text-feedback-warning"
           >
-            +100 XP
+            +{xpDisplay} XP
           </motion.p>
 
           <motion.div

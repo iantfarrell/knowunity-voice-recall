@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { soft } from "@/lib/motion";
+import { gentle, soft } from "@/lib/motion";
 
 // Still S8, SPEC.md §2.8 ("Feedback stack") — the graded-feedback badge +
 // hint content, all inside ONE bubble (Figma node 68:3634, "first hint").
@@ -44,10 +44,15 @@ export default function AnswerFeedback() {
   const [showHint, setShowHint] = useState(false);
 
   return (
+    // Entrance uses `gentle` (motion-guide.md's "Result reveal" recipe),
+    // not `soft` — this is a result bubble, not a neutral chat-log line
+    // (the transcript echo above it), so it should visibly land rather
+    // than just fade in. Same recipe as CorrectFeedback/RevealedFeedback —
+    // outcomes are told apart by color/copy, not by motion.
     <motion.div
       initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={soft}
+      transition={gentle}
       className="flex items-end gap-2 px-4 pt-2"
     >
       <img
