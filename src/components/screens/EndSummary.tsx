@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { gentle, soft } from "@/lib/motion";
+import { gentle, snappy, soft } from "@/lib/motion";
 import { MicIcon, CheckIcon, EyeIcon, MinusIcon, ScheduleIcon } from "@/components/icons";
 
 // motion-guide.md's "end-of-session summary" recipe: stagger the lines in
@@ -244,7 +244,11 @@ export default function EndSummary() {
             console.log("repeat missed questions tapped — S9 not built yet")
           }
           whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
-          transition={soft}
+          // `snappy`, not `soft` — motion-guide.md's "feedback should feel
+          // instant" rule (the entrance stagger above this still uses
+          // `item`'s own `soft`, via that variant's explicit transition;
+          // this prop only governs the whileTap spring).
+          transition={snappy}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-interactive-primary text-xl font-bold text-interactive-onprimary shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)]"
         >
           <MicIcon className="h-6 w-6" />
@@ -255,7 +259,7 @@ export default function EndSummary() {
           type="button"
           onClick={() => console.log("remind me tomorrow tapped — S9 not built yet")}
           whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
-          transition={soft}
+          transition={snappy}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-background-surface text-xl font-bold text-text-primary shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)]"
         >
           <ScheduleIcon className="h-6 w-6" />

@@ -69,21 +69,29 @@ export default function TermPrompt({
         <MicIcon className="h-8 w-8 text-text-primary" />
       </motion.button>
 
+      {/* Secondary text-link actions previously had zero tactile feedback —
+          only the mic did. Same `snappy` recipe as the mic (motion-guide.md's
+          "feedback should feel instant" rule), but a lighter 0.97 scale to
+          match their smaller visual weight instead of the mic's 0.94. */}
       <div className="flex items-center gap-4">
-        <button
+        <motion.button
           type="button"
           onClick={onSkip}
+          whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
+          transition={snappy}
           className="min-h-11 px-1 text-sm text-text-secondary"
         >
           Skip this term
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           type="button"
           onClick={onTypeInstead}
+          whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
+          transition={snappy}
           className="min-h-11 px-1 text-sm font-medium text-accent-brand-bold"
         >
           Type instead
-        </button>
+        </motion.button>
       </div>
     </div>
   );

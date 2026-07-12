@@ -84,13 +84,18 @@ export default function RecordingActive({
             Recording
           </span>
         </div>
-        <button
+        {/* Same secondary-action press recipe as TermPrompt's Skip/Type
+            instead (`snappy`, 0.97 scale) — previously discarding a
+            recording gave zero tactile confirmation. */}
+        <motion.button
           type="button"
           onClick={onCancel}
+          whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
+          transition={snappy}
           className="min-h-11 px-1 text-sm text-text-secondary"
         >
           Cancel
-        </button>
+        </motion.button>
       </div>
 
       <p

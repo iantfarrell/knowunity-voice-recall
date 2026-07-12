@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { snappy, soft } from "@/lib/motion";
+import { gentle, snappy, soft } from "@/lib/motion";
 
 // feedback.md's "[M] Transcript before submit" fix: testers skipped the fake
 // audio playback entirely and wanted to see what was actually heard before
@@ -41,14 +41,27 @@ export default function PlaybackReview({
       transition={soft}
       className="flex w-full flex-col items-center gap-4 border border-border-default p-7"
     >
-      <div className="w-full rounded-2xl bg-background-transcript p-4">
+      {/* This card is the flow's "say it back" moment — Knowie reading the
+          transcript back before the student commits to it. Previously it
+          entered as part of the same flat opacity/y fade as the whole panel
+          (buttons included), so it read as just more UI landing rather than
+          something being presented for review. A short `gentle` spring,
+          delayed a beat behind the panel border, gives it its own small
+          "here's what we heard, take a look" landing — an invitation to
+          check the transcript, not just the next screen cut. */}
+      <motion.div
+        initial={prefersReducedMotion ? undefined : { opacity: 0, y: 6, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ ...gentle, delay: prefersReducedMotion ? 0 : 0.08 }}
+        className="w-full rounded-2xl bg-background-transcript p-4"
+      >
         <p className="text-xs font-semibold tracking-wide text-accent-brand-bold">
           YOUR ANSWER
         </p>
         <p className="mt-1 text-base italic text-text-primary">
           &ldquo;{transcript}&rdquo;
         </p>
-      </div>
+      </motion.div>
 
       <div className="flex w-full flex-col items-center gap-2">
         {/* Committing an answer that can't be edited afterward (SPEC.md's
@@ -71,21 +84,27 @@ export default function PlaybackReview({
             instead available at three points: term prompt, audio review,
             result screen" — added here as the de-emphasized option,
             mirroring S2's skip/type-instead pairing. */}
+        {/* Same secondary-action press recipe as TermPrompt's Skip/Type
+            instead (`snappy`, 0.97 scale). */}
         <div className="flex items-center gap-4">
-          <button
+          <motion.button
             type="button"
             onClick={onRecordAgain}
+            whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
+            transition={snappy}
             className="min-h-11 px-1 text-sm font-medium text-accent-brand-bold"
           >
             Record again
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             type="button"
             onClick={onTypeInstead}
+            whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
+            transition={snappy}
             className="min-h-11 px-1 text-sm text-text-secondary"
           >
             Type instead
-          </button>
+          </motion.button>
         </div>
       </div>
     </motion.div>

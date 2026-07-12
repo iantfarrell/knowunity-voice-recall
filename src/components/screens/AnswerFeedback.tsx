@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { gentle, soft } from "@/lib/motion";
+import { gentle, snappy, soft } from "@/lib/motion";
 
 // Still S8, SPEC.md §2.8 ("Feedback stack") — the graded-feedback badge +
 // hint content, all inside ONE bubble (Figma node 68:3634, "first hint").
@@ -93,7 +93,11 @@ export default function AnswerFeedback() {
           type="button"
           onClick={() => setShowHint((prev) => !prev)}
           whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
-          transition={soft}
+          // `snappy` for the tap itself (motion-guide.md's "feedback should
+          // feel instant" rule) — `soft` stays below on the bubble's own
+          // `layout` resize and the hint text's AnimatePresence, which are
+          // reveal transitions, not press feedback.
+          transition={snappy}
           className="mt-3 inline-flex items-center rounded-full border border-feedback-partial px-4 py-2 text-sm font-semibold text-text-primary"
         >
           {showHint ? "Hide hint" : "Get a hint"}

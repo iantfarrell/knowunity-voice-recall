@@ -52,21 +52,27 @@ export default function RetryPrompt({
         </motion.button>
       </div>
 
+      {/* Same secondary-action press recipe as TermPrompt's Skip/Type
+          instead (`snappy`, 0.97 scale) — see that file's matching comment. */}
       <div className="flex items-center gap-4">
-        <button
+        <motion.button
           type="button"
           onClick={onSkip}
+          whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
+          transition={snappy}
           className="min-h-11 px-1 text-sm text-text-secondary"
         >
           Skip this term
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           type="button"
           onClick={onTypeInstead}
+          whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
+          transition={snappy}
           className="min-h-11 px-1 text-sm font-medium text-accent-brand-bold"
         >
           Type instead
-        </button>
+        </motion.button>
       </div>
     </div>
   );

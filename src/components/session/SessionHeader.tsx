@@ -1,3 +1,7 @@
+"use client";
+
+import { motion, useReducedMotion } from "motion/react";
+import { snappy } from "@/lib/motion";
 import { BoltIcon, CloseIcon } from "@/components/icons";
 import { TOTAL_TERMS } from "@/lib/session-data";
 
@@ -15,20 +19,26 @@ export default function SessionHeader({
   sessionXp,
   onExitRequest,
 }: SessionHeaderProps) {
+  const prefersReducedMotion = useReducedMotion();
   // Progress reflects position within the session, counting the current term
   // as started (matches the ~partial fill shown on term 1 in both frames).
   const progressFraction = (termIndex + 1) / (TOTAL_TERMS + 1);
 
   return (
     <div className="flex h-14 shrink-0 items-center gap-1 px-3 pb-2">
-      <button
+      {/* The one-tap exit for the whole session — highest-stakes control in
+          the header, but previously had only a CSS hover tint, no tap
+          feedback at all. Same weight as the mic (`snappy`, 0.94 scale). */}
+      <motion.button
         type="button"
         aria-label="Exit voice recall session"
         onClick={onExitRequest}
+        whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
+        transition={snappy}
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-text-primary transition-colors hover:bg-background-surface"
       >
         <CloseIcon className="h-6 w-6" />
-      </button>
+      </motion.button>
 
       <div
         className="h-2 min-w-px flex-1 overflow-hidden rounded-full bg-background-surface"

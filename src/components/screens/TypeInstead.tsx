@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { snappy } from "@/lib/motion";
 import { ArrowUpIcon, MicIcon } from "@/components/icons";
 
 // The text-fallback screen, reached via "Type instead" from both the
@@ -35,6 +37,7 @@ export default function TypeInstead({
   onSubmit,
   onUseVoiceInstead,
 }: TypeInsteadProps) {
+  const prefersReducedMotion = useReducedMotion();
   const [answer, setAnswer] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hasText = answer.trim().length > 0;
@@ -56,60 +59,80 @@ export default function TypeInstead({
   };
 
   return (
-    <div className="flex items-end gap-2 px-4 pb-4">
-      <button
-        type="button"
-        aria-label="Use voice instead"
-        onClick={onUseVoiceInstead}
-        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-border-default bg-background-input"
-      >
-        <MicIcon className="h-6 w-6 text-text-primary" />
-      </button>
+    <div className="flex flex-col gap-2 pb-4">
+      {/* motion-guide.md's "can't-speak text fallback (bottom sheet)" recipe
+          calls for a grabber handle so this reads as a native sheet being
+          offered, not a page swap — the slide-up motion itself lives on the
+          wrapper page.tsx mounts this screen inside (see that file's
+          `sheetVariants`), since this component only owns its own content. */}
+      <div className="mx-auto h-1 w-9 rounded-full bg-border-default" />
 
-      <div
-        className={`flex min-h-14 flex-1 items-end gap-2 border border-border-default bg-background-input py-1.5 pl-4 pr-1.5 ${
-          hasText ? "rounded-3xl" : "rounded-full"
-        }`}
-      >
-        <textarea
-          ref={textareaRef}
-          rows={1}
-          value={answer}
-          onChange={(event) => setAnswer(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              handleSubmit();
-            }
-          }}
-          // Recall-specific placeholder, not the reference screenshot's
-          // generic chat-input copy ("Ask anything...") — this field is the
-          // text fallback for explaining the term out loud, so it should
-          // read like the same prompt as the mic screen (TermPrompt.tsx's
-          // "Explain this in your own words."), not a generic assistant
-          // input.
-          placeholder="Explain in your own words..."
-          autoFocus
-          className="my-auto min-w-0 flex-1 resize-none bg-transparent py-1 text-base font-medium leading-snug text-text-primary placeholder:text-text-disabled focus:outline-none"
-        />
-
-        <button
+      <div className="flex items-end gap-2 px-4">
+        {/* Icon button, same visual/tactile weight as the mic elsewhere
+            (`snappy`, 0.94 scale) rather than the lighter text-link
+            treatment — this is a primary control, not a secondary link. */}
+        <motion.button
           type="button"
-          aria-label="Submit answer"
-          // 44px tap target (accessibility minimum) even though the visual
-          // circle inside is only the Figma-specced 30x30 — centered inside
-          // this hit area rather than filling it.
-          onClick={handleSubmit}
-          className="flex h-11 w-11 shrink-0 items-center justify-center"
+          aria-label="Use voice instead"
+          onClick={onUseVoiceInstead}
+          whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
+          transition={snappy}
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-border-default bg-background-input"
         >
-          <span
-            className={`flex h-[30px] w-[30px] items-center justify-center rounded-full ${
-              hasText ? "bg-accent-blue-bold" : ""
-            }`}
+          <MicIcon className="h-6 w-6 text-text-primary" />
+        </motion.button>
+
+        <div
+          className={`flex min-h-14 flex-1 items-end gap-2 border border-border-default bg-background-input py-1.5 pl-4 pr-1.5 ${
+            hasText ? "rounded-3xl" : "rounded-full"
+          }`}
+        >
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={answer}
+            onChange={(event) => setAnswer(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                handleSubmit();
+              }
+            }}
+            // Recall-specific placeholder, not the reference screenshot's
+            // generic chat-input copy ("Ask anything...") — this field is the
+            // text fallback for explaining the term out loud, so it should
+            // read like the same prompt as the mic screen (TermPrompt.tsx's
+            // "Explain this in your own words."), not a generic assistant
+            // input.
+            placeholder="Explain in your own words..."
+            autoFocus
+            className="my-auto min-w-0 flex-1 resize-none bg-transparent py-1 text-base font-medium leading-snug text-text-primary placeholder:text-text-disabled focus:outline-none"
+          />
+
+          {/* Commits the typed answer — same stakes as PlaybackReview's
+              Submit, previously the one primary "commit" tap in the whole
+              flow with zero press feedback. Same `snappy` recipe, mic-weight
+              0.94 scale to match its primary-action role. */}
+          <motion.button
+            type="button"
+            aria-label="Submit answer"
+            // 44px tap target (accessibility minimum) even though the visual
+            // circle inside is only the Figma-specced 30x30 — centered inside
+            // this hit area rather than filling it.
+            onClick={handleSubmit}
+            whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
+            transition={snappy}
+            className="flex h-11 w-11 shrink-0 items-center justify-center"
           >
-            <ArrowUpIcon className="h-4 w-4 text-text-primary" />
-          </span>
-        </button>
+            <span
+              className={`flex h-[30px] w-[30px] items-center justify-center rounded-full ${
+                hasText ? "bg-accent-blue-bold" : ""
+              }`}
+            >
+              <ArrowUpIcon className="h-4 w-4 text-text-primary" />
+            </span>
+          </motion.button>
+        </div>
       </div>
     </div>
   );
