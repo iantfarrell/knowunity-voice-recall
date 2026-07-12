@@ -26,6 +26,17 @@ const FEEDBACK_QUESTION =
 const HINT_TEXT =
   "Think about what happens to the chromosomes before the cell splits, and what each new cell ends up with.";
 
+// feedback.md's "hide hint feels laggy" fix. The first attempt swapped the
+// collapse from `soft` (220ms tween) to `snappy` (a spring), assuming a
+// "toggle" preset would settle faster — measured with Playwright, it did
+// the opposite: a spring animating a full opacity 1→0 swing has real
+// amplitude to decay, unlike `whileTap`'s few-pixel scale nudge where
+// `snappy` reads as instant, so it took ~700ms to actually finish and
+// unmount, worse than the original. A short deterministic tween — `soft`'s
+// same easing curve, roughly half its duration — is what actually gets the
+// text off-screen fast, so that's what collapse uses instead.
+const quickHide = { duration: 0.12, ease: soft.ease } as const;
+
 export default function AnswerFeedback() {
   const prefersReducedMotion = useReducedMotion();
   // feedback.md's "[L] Hint ladder" fix: this used to auto-reveal ~220ms
@@ -77,10 +88,14 @@ export default function AnswerFeedback() {
           genuinely needs to change") — previously the hint was a bare
           conditional with zero motion, so the bubble (and everything below
           it, via SessionShell's ResizeObserver auto-scroll) jumped
-          instantly. */}
+          instantly.
+          feedback.md's "hide hint feels laggy" fix: reveal stays `soft`
+          (a considered 220ms entrance); collapse uses `quickHide` (see
+          above) instead, so the bubble shrinks back down fast when the
+          hint is dismissed instead of lingering. */}
       <motion.div
         layout
-        transition={soft}
+        transition={showHint ? soft : quickHide}
         className="max-w-[294px] rounded-tl-2xl rounded-tr-2xl rounded-bl-md rounded-br-2xl border border-feedback-partial bg-feedback-partial/15 p-4"
       >
         <span className="inline-block rounded-lg bg-feedback-warning-chip/20 px-2 py-0.5 text-xs font-semibold tracking-wide text-feedback-warning">
@@ -94,9 +109,9 @@ export default function AnswerFeedback() {
           onClick={() => setShowHint((prev) => !prev)}
           whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
           // `snappy` for the tap itself (motion-guide.md's "feedback should
-          // feel instant" rule) — `soft` stays below on the bubble's own
-          // `layout` resize and the hint text's AnimatePresence, which are
-          // reveal transitions, not press feedback.
+          // feel instant" rule). The bubble's `layout` resize and the hint
+          // text's AnimatePresence below use `soft` on reveal but `quickHide`
+          // on collapse — see the comment on the bubble above.
           transition={snappy}
           className="mt-3 inline-flex items-center rounded-full border border-feedback-partial px-4 py-2 text-sm font-semibold text-text-primary"
         >
@@ -107,9 +122,12 @@ export default function AnswerFeedback() {
             <motion.p
               key="hint"
               initial={prefersReducedMotion ? undefined : { opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={prefersReducedMotion ? undefined : { opacity: 0, y: 4 }}
-              transition={soft}
+              animate={{ opacity: 1, y: 0, transition: soft }}
+              exit={
+                prefersReducedMotion
+                  ? undefined
+                  : { opacity: 0, y: 4, transition: quickHide }
+              }
               className="mt-3 text-base text-text-primary"
             >
               {HINT_TEXT}
