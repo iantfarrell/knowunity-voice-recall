@@ -1,5 +1,8 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
+import { snappy, soft } from "@/lib/motion";
+
 // feedback.md's "[M] Transcript before submit" fix: testers skipped the fake
 // audio playback entirely and wanted to see what was actually heard before
 // committing to Submit. This screen used to show a mock waveform + play/
@@ -24,10 +27,20 @@ export default function PlaybackReview({
   onRecordAgain,
   onTypeInstead,
 }: PlaybackReviewProps) {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     // Figma node 63:3538's bottom panel (data-node-id 63:3579) carries the
-    // same full 1px border, no rounded corners, as S5's panel.
-    <div className="flex w-full flex-col items-center gap-4 border border-border-default p-7">
+    // same full 1px border, no rounded corners, as S5's panel. Fades/rises in
+    // on arrival (motion-guide.md's "screen-to-screen" recipe) rather than
+    // hard-cutting in from RecordingActive's Stop tap — this panel used to
+    // have no entrance motion of its own at all.
+    <motion.div
+      initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={soft}
+      className="flex w-full flex-col items-center gap-4 border border-border-default p-7"
+    >
       <div className="w-full rounded-2xl bg-background-transcript p-4">
         <p className="text-xs font-semibold tracking-wide text-accent-brand-bold">
           YOUR ANSWER
@@ -38,13 +51,19 @@ export default function PlaybackReview({
       </div>
 
       <div className="flex w-full flex-col items-center gap-2">
-        <button
+        {/* Committing an answer that can't be edited afterward (SPEC.md's
+            "no transcript editing") is the highest-stakes tap in the flow —
+            it previously gave zero tactile confirmation, unlike the mic/stop
+            buttons. Same whileTap+snappy recipe as those. */}
+        <motion.button
           type="button"
           onClick={onSubmit}
+          whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
+          transition={snappy}
           className="flex h-14 w-full items-center justify-center rounded-full bg-interactive-primary text-xl font-bold text-interactive-onprimary shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)]"
         >
           Submit
-        </button>
+        </motion.button>
 
         {/* "Record again" is the Figma-specified secondary action;
             "Type instead" isn't in this specific frame but is required on
@@ -69,6 +88,6 @@ export default function PlaybackReview({
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

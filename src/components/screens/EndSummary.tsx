@@ -1,6 +1,24 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
+import { soft } from "@/lib/motion";
 import { MicIcon, CheckIcon, EyeIcon, MinusIcon, ScheduleIcon } from "@/components/icons";
+
+// motion-guide.md's "end-of-session summary" recipe: stagger the lines in
+// (staggerChildren: 0.06) as "a subtle, earned moment, not confetti" —
+// previously every element here (mascot, XP, headline, chips, all 5 term
+// rows, both CTAs) rendered instantly, all at once, with zero motion
+// anywhere in this file. SectionDividers are deliberately left out of the
+// stagger (decorative rules, not content the student needs to register) per
+// motion-guide's "one thing moving at a time" restraint.
+const container = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+const item = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: soft },
+};
 
 // S10 — session summary (Figma node 110:7707, "end summary"). Reached "for
 // the sake of the prototype" from the retry's "Next question" CTA
@@ -78,30 +96,47 @@ function NeutralChip({ children }: { children: React.ReactNode }) {
 }
 
 export default function EndSummary() {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
-    <div className="flex h-full flex-col">
+    <motion.div
+      variants={container}
+      initial={prefersReducedMotion ? "show" : "hidden"}
+      animate="show"
+      className="flex h-full flex-col"
+    >
       <div className="flex-1 overflow-y-auto">
         <div className="flex flex-col items-center gap-2 px-4 pb-4 pt-8">
-          <img
+          <motion.img
+            variants={item}
             src="/images/mascot%20big%20eyes.png"
             alt=""
             className="h-[120px] w-[120px] object-contain"
           />
 
-          <p className="text-[44px] font-black leading-[48px] tracking-[-0.44px] text-feedback-warning">
+          <motion.p
+            variants={item}
+            className="text-[44px] font-black leading-[48px] tracking-[-0.44px] text-feedback-warning"
+          >
             +100 XP
-          </p>
+          </motion.p>
 
-          <div className="flex flex-col items-center gap-1 text-center">
+          <motion.div
+            variants={item}
+            className="flex flex-col items-center gap-1 text-center"
+          >
             <p className="text-2xl font-bold text-text-primary">
               Great job on Cell Division
             </p>
             <p className="text-base text-text-secondary">
               3 of 5 terms nailed - 2 left to strengthen
             </p>
-          </div>
+          </motion.div>
 
-          <div className="flex flex-wrap items-center justify-center gap-1 pt-2">
+          <motion.div
+            variants={item}
+            className="flex flex-wrap items-center justify-center gap-1 pt-2"
+          >
             <span className="inline-flex h-6 items-center rounded-full border border-highlight-recognized bg-feedback-correct/15 px-2 text-[9px] font-medium tracking-wide text-feedback-correct">
               3 nailed
             </span>
@@ -110,7 +145,7 @@ export default function EndSummary() {
             </span>
             <NeutralChip>1 revealed</NeutralChip>
             <NeutralChip>1 skipped</NeutralChip>
-          </div>
+          </motion.div>
         </div>
 
         <SectionDivider label="THIS SESSION" />
@@ -126,8 +161,9 @@ export default function EndSummary() {
                   : "text-text-tertiary";
 
             return (
-              <div
+              <motion.div
                 key={term.name}
+                variants={item}
                 className="flex items-center justify-between px-4 py-2"
               >
                 <div className="flex items-center gap-4">
@@ -146,43 +182,52 @@ export default function EndSummary() {
                 <p className={`text-sm font-medium ${xpClass}`}>
                   {term.xpDelta > 0 ? `+${term.xpDelta}` : term.xpDelta}
                 </p>
-              </div>
+              </motion.div>
             );
           })}
         </div>
 
         <SectionDivider label={`${STRENGTHEN_TERMS.length} TERMS TO STRENGTHEN`} />
 
-        <div className="flex flex-wrap items-center gap-1 px-4 pb-4">
+        <motion.div
+          variants={item}
+          className="flex flex-wrap items-center gap-1 px-4 pb-4"
+        >
           {STRENGTHEN_TERMS.map((name) => (
             <NeutralChip key={name}>
               <span className="mr-1 inline-block h-1 w-1 rounded-full bg-feedback-error" />
               {name}
             </NeutralChip>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       <div className="flex shrink-0 flex-col gap-2 px-4 py-6">
-        <button
+        <motion.button
+          variants={item}
           type="button"
           onClick={() =>
             console.log("repeat missed questions tapped — S9 not built yet")
           }
+          whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
+          transition={soft}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-interactive-primary text-xl font-bold text-interactive-onprimary shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)]"
         >
           <MicIcon className="h-6 w-6" />
           Repeat missed questions
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          variants={item}
           type="button"
           onClick={() => console.log("remind me tomorrow tapped — S9 not built yet")}
+          whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
+          transition={soft}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-background-surface text-xl font-bold text-text-primary shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)]"
         >
           <ScheduleIcon className="h-6 w-6" />
           Remind me tomorrow
-        </button>
+        </motion.button>
       </div>
-    </div>
+    </motion.div>
   );
 }

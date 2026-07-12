@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { snappy } from "@/lib/motion";
+import { snappy, soft } from "@/lib/motion";
 
 // sprint-context.md: "Push-to-talk recording; cancel available throughout;
 // 90s auto-stop."
@@ -13,8 +13,14 @@ const AUTO_STOP_SECONDS = 90;
 // shape still matches the bar pattern in Figma node 62:8876's "Waveform
 // Playing" group; each bar's height below is its resting/base height, now
 // animated per-bar where it's rendered below so it reads as live recording
-// feedback rather than a static snapshot — user reference: a "live audio
-// input" gif where center-out bars each pulse at their own tempo.
+// feedback rather than a static snapshot. Originally each of the 15 bars
+// pulsed on its own independent phase (per a "live audio input" reference
+// gif); that read as busier than motion-guide.md wants for a screen the
+// student is meant to be speaking over ("one pulse, not a light show" —
+// looping background motion while the student reads/speaks is explicitly
+// called out as something NOT to animate). Bars are now grouped into 3
+// synced clusters with a shared, narrower swing so the panel reads as a
+// single calm "listening" pulse instead of 15 independent ones.
 const WAVEFORM_BARS = [2, 8, 14, 4, 16, 14, 10, 10, 10, 14, 10, 16, 10, 4, 2];
 
 // S5's distinguishing content — the recording bottom panel (status row,
@@ -53,7 +59,15 @@ export default function RecordingActive({
     // Figma node 62:8876's bottom panel (data-node-id 62:8917) carries a
     // full 1px border, no rounded corners — matched literally here rather
     // than reusing the bottom-sheet radius convention from other panels.
-    <div className="flex shrink-0 flex-col items-center gap-4 border border-border-default px-7 pb-7 pt-6">
+    // Fades/rises in on arrival (motion-guide.md's "screen-to-screen"
+    // recipe) rather than hard-cutting in from TermPrompt's mic tap — this
+    // panel used to have no entrance motion of its own at all.
+    <motion.div
+      initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={soft}
+      className="flex shrink-0 flex-col items-center gap-4 border border-border-default px-7 pb-7 pt-6"
+    >
       <div className="flex w-full items-center justify-between">
         <div className="flex items-center gap-3">
           <motion.span
@@ -91,24 +105,23 @@ export default function RecordingActive({
         {WAVEFORM_BARS.map((height, i) => {
           // Bar heights come from the fixed WAVEFORM_BARS data above, not a
           // hand-picked visual value — same inline-style exception as the
-          // progress bar (see SessionHeader). Each bar scales vertically
-          // around its own resting height on a staggered loop — duration
-          // and delay are derived from the bar's index (not Math.random(),
-          // so the pattern is reproducible and can't mismatch between
-          // renders) so neighboring bars don't pulse in lockstep, giving
-          // the same organic, center-out "live meter" feel as the
-          // reference gif instead of one uniform pulse.
-          const duration = 0.5 + ((i * 7) % 5) * 0.12;
-          const delay = ((i * 3) % WAVEFORM_BARS.length) * 0.05;
+          // progress bar (see SessionHeader). Bars are grouped into 3 synced
+          // clusters (by index mod 3) sharing one duration and a small,
+          // group-offset delay, so the panel reads as one calm pulse moving
+          // across a few clusters rather than 15 bars each doing their own
+          // thing — a narrower scaleY swing too, since this loops the whole
+          // time the student is speaking (motion-guide.md: "one pulse, not
+          // a light show").
+          const group = i % 3;
+          const duration = 0.9;
+          const delay = group * 0.15;
           return (
             <motion.span
               key={i}
               className="w-0.5 shrink-0 rounded-full bg-accent-brand-bold opacity-50"
               style={{ height }}
               animate={
-                prefersReducedMotion
-                  ? undefined
-                  : { scaleY: [1, 0.4, 1.15, 0.7, 1] }
+                prefersReducedMotion ? undefined : { scaleY: [1, 0.6, 1] }
               }
               transition={
                 prefersReducedMotion
@@ -136,6 +149,6 @@ export default function RecordingActive({
       >
         <span className="h-5 w-5 rounded-md bg-feedback-error" />
       </motion.button>
-    </div>
+    </motion.div>
   );
 }

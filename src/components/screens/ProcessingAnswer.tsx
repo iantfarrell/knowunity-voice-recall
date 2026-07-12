@@ -2,12 +2,16 @@
 
 import { useEffect } from "react";
 import { motion, useReducedMotion } from "motion/react";
+import { soft } from "@/lib/motion";
 
 // User instruction for this screen: pulse the text for a max of 4s, then
 // advance automatically — the (mocked) STT/LLM judging step never actually
 // takes this long, but the cap keeps the student from ever feeling stuck
-// waiting on a fake process.
-const MAX_PROCESSING_MS = 4000;
+// waiting on a fake process. Trimmed to motion-guide.md's own "thinking"
+// recipe recommendation (~1-1.5s) — 4s read as a stall once the rest of the
+// loop's waits were this short, and this step is 100% mocked so there's no
+// real work happening that needs the extra time.
+const MAX_PROCESSING_MS = 1500;
 
 // S7 — "Knowie is thinking" (Figma node 63:3787, "Knowie listening to
 // answer" — copy changed per user instruction from the frame's original
@@ -33,7 +37,16 @@ export default function ProcessingAnswer({ onComplete }: ProcessingAnswerProps) 
   }, [onComplete]);
 
   return (
-    <div className="flex items-center gap-2 px-4 pt-2">
+    // Fades/rises in on mount, same as every sibling bubble in the log
+    // (TermBubble, AnswerTranscript, AnswerFeedback, CorrectFeedback) — this
+    // row previously popped in with no entrance motion of its own, an
+    // inconsistency once every other row in the stack fades in.
+    <motion.div
+      initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={soft}
+      className="flex items-center gap-2 px-4 pt-2"
+    >
       <img
         src="/images/Group%202136139939.png"
         alt=""
@@ -54,6 +67,6 @@ export default function ProcessingAnswer({ onComplete }: ProcessingAnswerProps) 
       >
         Knowie is thinking
       </motion.p>
-    </div>
+    </motion.div>
   );
 }

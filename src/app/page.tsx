@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { snappy } from "@/lib/motion";
 import SessionShell from "@/components/session/SessionShell";
 import TermPrompt from "@/components/screens/TermPrompt";
 import RecordingActive from "@/components/screens/RecordingActive";
@@ -78,6 +80,7 @@ const SECOND_ATTEMPT: Pick<TermAttempt, "transcript" | "highlightedSpans"> = {
 // AnswerTranscript stays mounted through the rest of S8 rather than being
 // swapped out.
 export default function Home() {
+  const prefersReducedMotion = useReducedMotion();
   const [termIndex] = useState(0);
   const [screen, setScreen] = useState<Screen>("termPrompt");
   // Set once the transcript+feedback+hint bubbles have appeared for this
@@ -298,13 +301,19 @@ export default function Home() {
           // single primary CTA, sitting at the same rhythm as every other
           // bottomCta.
           <div className="flex w-full shrink-0 flex-col items-center px-7 pb-7 pt-4">
-            <button
+            {/* This commits the student to ending the term and moving on —
+                same "highest-stakes tap" reasoning as PlaybackReview's
+                Submit, and previously gave the same zero tactile feedback.
+                Same whileTap+snappy recipe as Submit. */}
+            <motion.button
               type="button"
               onClick={() => setScreen("endSummary")}
+              whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
+              transition={snappy}
               className="flex h-14 w-full items-center justify-center rounded-full bg-interactive-primary text-xl font-bold text-interactive-onprimary shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)]"
             >
               Next question
-            </button>
+            </motion.button>
           </div>
         )}
       </SessionShell>

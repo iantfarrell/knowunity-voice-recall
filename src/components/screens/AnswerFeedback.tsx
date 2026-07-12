@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { soft } from "@/lib/motion";
 
 // Still S8, SPEC.md §2.8 ("Feedback stack") — the graded-feedback badge +
@@ -67,24 +67,47 @@ export default function AnswerFeedback() {
           avatar+gap sits on the RIGHT instead) and visually sitting under
           that bubble's avatar. Matching widths keeps every bubble's right
           edge aligned in one column. */}
-      <div className="max-w-[294px] rounded-tl-2xl rounded-tr-2xl rounded-bl-md rounded-br-2xl border border-feedback-partial bg-feedback-partial/15 p-4">
+      {/* `layout` lets this bubble's height animate smoothly when the hint
+          mounts/unmounts below (motion-guide.md: "use `layout` if a size
+          genuinely needs to change") — previously the hint was a bare
+          conditional with zero motion, so the bubble (and everything below
+          it, via SessionShell's ResizeObserver auto-scroll) jumped
+          instantly. */}
+      <motion.div
+        layout
+        transition={soft}
+        className="max-w-[294px] rounded-tl-2xl rounded-tr-2xl rounded-bl-md rounded-br-2xl border border-feedback-partial bg-feedback-partial/15 p-4"
+      >
         <span className="inline-block rounded-lg bg-feedback-warning-chip/20 px-2 py-0.5 text-xs font-semibold tracking-wide text-feedback-warning">
           PARTIALLY RIGHT
         </span>
         <p className="mt-2 text-base text-text-primary">
           {FEEDBACK_LEAD} <span className="font-bold">{FEEDBACK_QUESTION}</span>
         </p>
-        <button
+        <motion.button
           type="button"
           onClick={() => setShowHint((prev) => !prev)}
+          whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
+          transition={soft}
           className="mt-3 inline-flex items-center rounded-full border border-feedback-partial px-4 py-2 text-sm font-semibold text-text-primary"
         >
           {showHint ? "Hide hint" : "Get a hint"}
-        </button>
-        {showHint && (
-          <p className="mt-3 text-base text-text-primary">{HINT_TEXT}</p>
-        )}
-      </div>
+        </motion.button>
+        <AnimatePresence initial={false}>
+          {showHint && (
+            <motion.p
+              key="hint"
+              initial={prefersReducedMotion ? undefined : { opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={prefersReducedMotion ? undefined : { opacity: 0, y: 4 }}
+              transition={soft}
+              className="mt-3 text-base text-text-primary"
+            >
+              {HINT_TEXT}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </motion.div>
   );
 }
