@@ -117,14 +117,32 @@ body {
   height: 100%;
 }
 
+/* Outer page backdrop only — the margin around the 390px frame on viewports
+   wider than the app itself. Not a design.md token and not part of the
+   Knowunity dark-mode UI; the actual app canvas stays on
+   --color-background-page via .app-shell below. */
+:root {
+  --page-backdrop: #fffefc;
+}
+
 body {
-  background: var(--color-background-page);
+  background: var(--page-backdrop);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
+  /* Center the device frame, but degrade to top-aligned + scrollable
+     instead of clipping unreachably when it's taller than the viewport
+     (the classic flexbox centering-with-overflow trap). body is flex-col,
+     so the vertical axis is the main axis here — that's justify-content,
+     not align-items. "safe center" falls back to plain "center" in
+     browsers that don't support the safe keyword yet. */
+  justify-content: center;
+  justify-content: safe center;
+  align-items: center;
 }
 
 /* Full-screen app shell, safe-area aware (prototype-rules.md "Safe areas"). */
 .app-shell {
+  background: var(--color-background-page);
   min-height: 100dvh;
   width: 100%;
   max-width: 390px;
@@ -135,6 +153,140 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+
+/* Device-frame chrome — presentational only, not part of the Knowunity
+   design system. On an actual phone (viewport <= 480px) every piece below
+   is hidden and .app-shell renders edge-to-edge exactly as before. Above
+   that width, it wraps .app-shell in a realistic phone bezel (Dynamic
+   Island, status bar, side buttons, home indicator — see the reference at
+   Figma node 174:16220) instead of letting the prototype fill the browser
+   window as a flat rectangle. */
+.device-frame {
+  width: 100%;
+  max-width: 390px;
+  margin-inline: auto;
+}
+
+.device-notch,
+.device-statusbar,
+.device-home-indicator,
+.device-btn {
+  display: none;
+}
+
+@media (min-width: 480px) {
+  .device-frame {
+    display: inline-block;
+    width: auto;
+    max-width: none;
+    /* Shrinks the whole mockup (bezel + real app content together) to a
+       reasonable on-page size — matched against a reference case-study
+       page's own phone embed (~344x706px in a 1280px-wide viewport).
+       `zoom` (not `transform: scale`) so the smaller footprint is real
+       layout size, not visual-only space left behind by a transform, and
+       everything inside — including .app-shell's true 390x844 content —
+       still renders at its real design pixels internally, just uniformly
+       smaller, rather than being squeezed into a narrower box. */
+    zoom: 0.82;
+    background: #1c1e20;
+    border-radius: 56px;
+    padding: 14px;
+    /* Outer drop shadow removed per user instruction (showed up in screen
+       recordings of the demo flow as unwanted visible shading around the
+       phone bezel). Keeping the 1px inset highlight — a faint edge-lighting
+       detail, not a visible "shadow" in the sense that was flagged. */
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    position: relative;
+  }
+
+  /* Fixed to the design's real 390x844 size, always — not derived from
+     viewport height. Letting height respond to 88dvh (as an earlier
+     version did) meant the screen shrank on any viewport under ~960px
+     tall, while the notch/buttons/bezel stayed full-size — that's what
+     made the chrome read as oversized and cramped. A fixed natural size
+     keeps every proportion locked to the reference regardless of window
+     height; on a short viewport the page scrolls instead. */
+  .device-frame .app-shell {
+    min-height: 0;
+    width: 390px;
+    max-width: none;
+    height: auto;
+    aspect-ratio: 390 / 844;
+    border-radius: 44px;
+    /* No top padding to clear a notch/status-bar band anymore — both are
+       hidden below (user instruction, "don't need it"). The app's own real
+       header now sits flush at the top edge, same as it does at the actual
+       mobile breakpoint. */
+    padding-bottom: 26px;
+  }
+
+  /* Dynamic-island notch + fake status bar (time, signal/wifi/battery) —
+     hidden per user instruction ("don't need it"). The DeviceFrame.tsx
+     markup still renders both, so this stays a pure CSS toggle rather than
+     ripping the JSX out — easy to bring back by removing this rule. */
+  .device-notch,
+  .device-statusbar {
+    display: none;
+  }
+
+  /* Home indicator. */
+  .device-home-indicator {
+    display: block;
+    position: absolute;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 20;
+  }
+
+  /* Side buttons — three on the left (mute, volume up, volume down), one
+     longer power button on the right, matching a real device's grouping
+     rather than one arbitrary nub per side. */
+  .device-btn {
+    display: block;
+    position: absolute;
+    width: 3px;
+    border-radius: 2px 0 0 2px;
+    background: #1c1e20;
+  }
+  .device-btn-mute {
+    left: -3px;
+    top: 120px;
+    height: 32px;
+  }
+  .device-btn-vol-up {
+    left: -3px;
+    top: 168px;
+    height: 56px;
+  }
+  .device-btn-vol-down {
+    left: -3px;
+    top: 234px;
+    height: 56px;
+  }
+  .device-btn-power {
+    right: -3px;
+    top: 190px;
+    height: 90px;
+    border-radius: 0 2px 2px 0;
+  }
+}
+
+/* Hides the scrollbar on an internally-scrolling container (the bubble-log
+   feedback stack, the summary content) without disabling scroll itself —
+   a native app doesn't show a scrollbar track, and it read as web-page
+   chrome inside the phone mockup. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* Visible focus states for keyboard / assistive tech (prototype-rules.md

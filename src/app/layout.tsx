@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { DeviceFrame } from "@/components/DeviceFrame";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -27,8 +28,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased dark`}>
-      <body className="min-h-full flex flex-col bg-background-page">
-        {children}
+      <body className="min-h-full flex flex-col items-center">
+        <DeviceFrame>{children}</DeviceFrame>
       </body>
     </html>
   );
