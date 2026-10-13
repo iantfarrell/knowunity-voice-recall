@@ -91,7 +91,7 @@ export default function SessionShell({
         onExitRequest={onExitRequest}
       />
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar">
         <div ref={contentRef}>
           <TermBubble term={term} showAvatar={!hideBubbleAvatar} />
           {afterBubble}

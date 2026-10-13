@@ -73,14 +73,14 @@ export default function SessionIntro({ onStart, onSkip }: SessionIntroProps) {
 
         <motion.div
           variants={item}
-          className="flex flex-wrap items-center justify-center gap-2 pt-2"
+          className="flex flex-wrap items-center justify-center gap-1.5 pt-2"
         >
           {INFO_CHIPS.map(({ label, Icon }) => (
             <span
               key={label}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border-default bg-background-surface px-3 py-1.5 text-sm text-text-secondary"
+              className="inline-flex items-center gap-1 rounded-full border border-border-default bg-background-surface px-2.5 py-1 text-xs text-text-secondary"
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-3 w-3" />
               {label}
             </span>
           ))}

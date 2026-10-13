@@ -3,15 +3,17 @@
 import { useEffect } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { soft } from "@/lib/motion";
+import ShimmerText from "@/components/ShimmerText";
 
-// User instruction for this screen: pulse the text for a max of 4s, then
+// User instruction for this screen: shimmer the text for a max of 2s, then
 // advance automatically — the (mocked) STT/LLM judging step never actually
 // takes this long, but the cap keeps the student from ever feeling stuck
-// waiting on a fake process. Trimmed to motion-guide.md's own "thinking"
-// recipe recommendation (~1-1.5s) — 4s read as a stall once the rest of the
-// loop's waits were this short, and this step is 100% mocked so there's no
-// real work happening that needs the extra time.
-const MAX_PROCESSING_MS = 1500;
+// waiting on a fake process. A touch above motion-guide.md's own "thinking"
+// recipe recommendation (~1-1.5s), per explicit user instruction — this
+// step is 100% mocked, so there's no real work happening that needs the
+// extra time, but 2s reads as a more deliberate, considered pause than 1.5s
+// did.
+const MAX_PROCESSING_MS = 2000;
 
 // S7 — "Knowie is thinking" (Figma node 63:3787, "Knowie listening to
 // answer" — copy changed per user instruction from the frame's original
@@ -52,21 +54,10 @@ export default function ProcessingAnswer({ onComplete }: ProcessingAnswerProps) 
         alt=""
         className="h-6 w-6 shrink-0 rounded-full"
       />
-      {/* motion-guide.md's looping-pulse recipe (recording dot: opacity/scale,
-          `repeat: Infinity, repeatType: "reverse"`), applied to the text
-          itself per this screen's explicit spec — a calm fade, not a light
-          show, so it reads as "still working" rather than an error state. */}
-      <motion.p
-        animate={prefersReducedMotion ? undefined : { opacity: [1, 0.35, 1] }}
-        transition={
-          prefersReducedMotion
-            ? undefined
-            : { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
-        }
-        className="text-sm italic text-text-primary"
-      >
-        Knowie is thinking
-      </motion.p>
+      {/* User instruction: a left-to-right shimmer sweep across the text
+          (the same "reading console…" style highlight-in-motion used
+          elsewhere), not a fade — see ShimmerText for how/why. */}
+      <ShimmerText className="text-sm italic">Knowie is thinking</ShimmerText>
     </motion.div>
   );
 }

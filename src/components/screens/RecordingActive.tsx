@@ -123,7 +123,11 @@ export default function RecordingActive({
           return (
             <motion.span
               key={i}
-              className="w-0.5 shrink-0 rounded-full bg-accent-brand-bold opacity-50"
+              // User instruction: bars read too dark — was accent-brand-bold
+              // at 50% opacity (a muted version of #9178e6 against the dark
+              // panel), now full-opacity so it renders as the real token
+              // color instead of a dimmed one.
+              className="w-0.5 shrink-0 rounded-full bg-accent-brand-bold"
               style={{ height }}
               animate={
                 prefersReducedMotion ? undefined : { scaleY: [1, 0.6, 1] }

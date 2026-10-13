@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { gentle, snappy, soft } from "@/lib/motion";
+import ShimmerText from "@/components/ShimmerText";
 
 // feedback.md's "[M] Transcript before submit" fix: testers skipped the fake
 // audio playback entirely and wanted to see what was actually heard before
@@ -14,6 +16,15 @@ import { gentle, snappy, soft } from "@/lib/motion";
 // of UI rather than an invented new style. No highlighted spans here,
 // though — those mark words the (mocked) grading step recognized, and
 // grading hasn't happened yet at this point in the flow.
+//
+// User instruction: the transcript was populating instantly on arrival,
+// with no beat for the (mocked) speech-to-text pass that would realistically
+// need to run first. Shorter than ProcessingAnswer's judging wait
+// (TRANSCRIBING_MS below) since this is just STT, not Knowie forming a
+// verdict — those are two different kinds of "thinking" and shouldn't read
+// as the same length pause.
+const TRANSCRIBING_MS = 700;
+
 interface PlaybackReviewProps {
   transcript: string;
   onSubmit?: () => void;
@@ -28,6 +39,15 @@ export default function PlaybackReview({
   onTypeInstead,
 }: PlaybackReviewProps) {
   const prefersReducedMotion = useReducedMotion();
+  const [isTranscribing, setIsTranscribing] = useState(true);
+
+  useEffect(() => {
+    const id = window.setTimeout(
+      () => setIsTranscribing(false),
+      prefersReducedMotion ? 0 : TRANSCRIBING_MS,
+    );
+    return () => window.clearTimeout(id);
+  }, [prefersReducedMotion]);
 
   return (
     // Figma node 63:3538's bottom panel (data-node-id 63:3579) carries the
@@ -58,22 +78,56 @@ export default function PlaybackReview({
         <p className="text-xs font-semibold tracking-wide text-accent-brand-bold">
           YOUR ANSWER
         </p>
-        <p className="mt-1 text-base italic text-text-primary">
-          &ldquo;{transcript}&rdquo;
-        </p>
+        {/* Brief (mocked) speech-to-text pass before the real words land —
+            was populating this card the instant the screen mounted before,
+            with no beat for realistic STT latency. Plain mount-triggered
+            fade-in on whichever piece is currently showing, not
+            AnimatePresence — AnimatePresence's exit/enter coordination
+            left both the shimmer and the real transcript frozen at their
+            initial opacity here (same issue found and worked around in
+            page.tsx's own top-level screen switch; see that file's
+            comment). The shimmer now disappears instantly once transcribed
+            rather than fading out, but the real transcript still fades in. */}
+        {isTranscribing ? (
+          <motion.div
+            initial={prefersReducedMotion ? undefined : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={soft}
+            className="mt-1"
+          >
+            <ShimmerText className="text-base italic">
+              Transcribing your answer…
+            </ShimmerText>
+          </motion.div>
+        ) : (
+          <motion.p
+            initial={prefersReducedMotion ? undefined : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={soft}
+            className="mt-1 text-base italic text-text-primary"
+          >
+            &ldquo;{transcript}&rdquo;
+          </motion.p>
+        )}
       </motion.div>
 
       <div className="flex w-full flex-col items-center gap-2">
         {/* Committing an answer that can't be edited afterward (SPEC.md's
             "no transcript editing") is the highest-stakes tap in the flow —
             it previously gave zero tactile confirmation, unlike the mic/stop
-            buttons. Same whileTap+snappy recipe as those. */}
+            buttons. Same whileTap+snappy recipe as those. Disabled while
+            transcribing — submitting before the (mocked) transcript has
+            even arrived doesn't make sense; Record again / Type instead
+            stay available throughout, per this app's "never trap the
+            student" rule, since discarding the attempt should never wait
+            on anything. */}
         <motion.button
           type="button"
           onClick={onSubmit}
-          whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
+          disabled={isTranscribing}
+          whileTap={prefersReducedMotion || isTranscribing ? undefined : { scale: 0.96 }}
           transition={snappy}
-          className="flex h-14 w-full items-center justify-center rounded-full bg-interactive-primary text-xl font-bold text-interactive-onprimary shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)]"
+          className="flex h-14 w-full items-center justify-center rounded-full bg-interactive-primary text-xl font-bold text-interactive-onprimary shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)] disabled:opacity-50"
         >
           Submit
         </motion.button>

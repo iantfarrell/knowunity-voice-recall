@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { sheet, snappy, soft } from "@/lib/motion";
+import { motion, useReducedMotion } from "motion/react";
+import { gentle, sheet, snappy, soft } from "@/lib/motion";
 import SessionShell from "@/components/session/SessionShell";
 import SessionIntro from "@/components/screens/SessionIntro";
 import TermPrompt from "@/components/screens/TermPrompt";
@@ -85,6 +85,12 @@ export default function Home() {
   const prefersReducedMotion = useReducedMotion();
   const [termIndex] = useState(0);
   const [screen, setScreen] = useState<Screen>("intro");
+  // The header's "live in-session tally" (design.md: increments during the
+  // session, distinct from EndSummary's own final XP deposit). Starts at 0
+  // and picks up the term's real xpValue once it's actually completed
+  // (secondFeedback, below) — was a meaningless hardcoded `2` before, with
+  // nothing in the flow that ever changed it.
+  const [sessionXp, setSessionXp] = useState(0);
   // Set once the transcript+feedback+hint bubbles have appeared for this
   // term (i.e. we've reached "feedbackHint") and never reset. Figma nodes
   // 70:4304 ("2nd attempt recording") and 108:7503 ("2nd attempt post
@@ -112,6 +118,7 @@ export default function Home() {
   function goTo(next: Screen) {
     setScreen(next);
   }
+
   const term = TERMS[termIndex];
   // True for the four screens that get reused/added for a retry attempt once
   // feedback has already been shown — drives the persisted bubble stack
@@ -142,317 +149,313 @@ export default function Home() {
   const showSecondTranscript =
     screen === "secondTranscript" || screen === "secondFeedback";
 
-  // Push variants for the bottom-controls area (TermPrompt, RecordingActive,
-  // PlaybackReview, RetryPrompt, the secondFeedback CTA) — a short fade +
-  // rise from below using `soft`, matching the y-offset fade already used
-  // throughout this app's other entrances (e.g. EndSummary's stagger,
-  // AnswerFeedback's own `gentle` landing) rather than a horizontal slide.
-  // Same treatment regardless of forward/back, since the header/term bubble
-  // above never moves — there's nothing on screen for a left/right direction
-  // to read against. Reduced-motion drops the `y` offset entirely and just
-  // crossfades, same pattern as every other entrance in this app.
-  const pushVariants = prefersReducedMotion
-    ? { enter: { opacity: 0 }, center: { opacity: 1 }, exit: { opacity: 0 } }
-    : {
-        enter: { opacity: 0, y: 14 },
-        center: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: -8 },
-      };
-  // TypeInstead is the one screen the guide special-cases: "The can't-speak
-  // text fallback (bottom sheet). Slide up from the bottom with `sheet`...
-  // Make it feel like a native sheet, not a page swap." So it gets its own
-  // bottom-to-top variant + the `sheet` spring instead of the generic
-  // side-push every other screen uses — it should read as being offered,
-  // not pushed to like the rest of the flow.
-  const sheetVariants = prefersReducedMotion
-    ? { enter: { opacity: 0 }, center: { opacity: 1 }, exit: { opacity: 0 } }
-    : {
-        enter: { opacity: 0, y: "100%" },
-        center: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: "100%" },
-      };
-
-  // The new first screen of the prototype (SessionIntro.tsx) — same
-  // "replaces SessionShell entirely" treatment as S10/EndSummary below,
-  // since it has no header/term bubble to share either. "Let's start" is an
-  // instant top-level swap into the session, not part of the bottom-controls
-  // push/fade system further down — same precedent as EndSummary's own
-  // swap in/out of SessionShell.
-  if (screen === "intro") {
-    return (
-      <div className="app-shell bg-background-page">
-        <SessionIntro
-          onStart={() => goTo("termPrompt")}
-          onSkip={() =>
-            console.log("skip intro tapped — no other destination built yet")
-          }
-        />
-      </div>
-    );
-  }
-
-  // S10 (Figma node 110:7707, "end summary") replaces SessionShell entirely
-  // rather than rendering inside it — unlike every other screen so far, it
-  // has no exit/progress/XP header or term bubble (Figma's own frame has
-  // just an empty topNavigation strip), so it doesn't share SessionShell's
-  // chrome. Reached "for the sake of the prototype" from the retry's "Next
-  // question" CTA above (see EndSummary.tsx's own header comment for why
-  // its content is hardcoded rather than computed from real session state).
-  if (screen === "endSummary") {
-    return (
-      <div className="app-shell bg-background-page">
-        <EndSummary />
-      </div>
-    );
-  }
+  // The three top-level "modes" of the prototype — SessionIntro, the
+  // in-progress session (SessionShell + its own per-screen switching
+  // below), and EndSummary — used to be three separate early returns, each
+  // swapping the whole app-shell content with zero transition. That made
+  // the two biggest beats in the flow (committing to start, arriving at
+  // your result) the only two moments in the app with no motion at all,
+  // while every screen inside the session got a considered push/fade.
+  const mode: "intro" | "endSummary" | "session" =
+    screen === "intro" ? "intro" : screen === "endSummary" ? "endSummary" : "session";
 
   return (
     <div className="app-shell bg-background-page">
-      <SessionShell
-        term={term}
-        sessionXp={2}
-        onExitRequest={() => console.log("exit requested — S11 not built yet")}
-        hideBubbleAvatar={screen === "processing"}
-        afterBubble={
-          showBubbleStack || screen === "processing" ? (
-            <>
-              {showBubbleStack && (
-                <AnswerTranscript
-                  attempt={term.attempts[0]}
-                  onComplete={() => {
-                    goTo("feedbackHint");
-                    setHasSeenFeedback(true);
-                  }}
+      {/* Plain mount-triggered fade-in on the entering mode, not
+         AnimatePresence's coordinated enter/exit pair — AnimatePresence
+         left both the entering and exiting element frozen at their initial
+         state here (session stuck at opacity:0, intro stuck at opacity:1,
+         zero animations ever registered on either per getAnimations())
+         across every variant tried (popLayout, sync mode, variants vs.
+         plain objects), and the identical freeze turned out to affect the
+         per-screen switcher inside `session` too (see that block's own
+         comment) — so neither level of this file uses AnimatePresence any
+         more. The outgoing content disappears instantly, but the incoming
+         content still fades in, instead of a hard cut on both sides. */}
+      {mode === "intro" && (
+        // The new first screen of the prototype (SessionIntro.tsx) — no
+        // header/term bubble to share, so it doesn't render inside
+        // SessionShell like the session screens do.
+        <motion.div
+          initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={soft}
+          className="h-full"
+        >
+          <SessionIntro
+            onStart={() => goTo("termPrompt")}
+            onSkip={() =>
+              console.log("skip intro tapped — no other destination built yet")
+            }
+          />
+        </motion.div>
+      )}
+
+      {mode === "endSummary" && (
+        // S10 (Figma node 110:7707, "end summary") — no exit/progress/XP
+        // header or term bubble (Figma's own frame has just an empty
+        // topNavigation strip), so it doesn't share SessionShell's chrome
+        // either. `gentle`, not `soft` — this is the flow's actual payoff
+        // moment (motion-guide.md's "Result reveal" weight), so it gets a
+        // touch more spring than a routine screen-to-screen push.
+        <motion.div
+          initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={gentle}
+          className="h-full"
+        >
+          <EndSummary />
+        </motion.div>
+      )}
+
+      {mode === "session" && (
+        <motion.div
+          initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={soft}
+          className="h-full"
+        >
+          <SessionShell
+            term={term}
+            sessionXp={sessionXp}
+            onExitRequest={() => console.log("exit requested — S11 not built yet")}
+            hideBubbleAvatar={screen === "processing"}
+            afterBubble={
+              showBubbleStack || screen === "processing" ? (
+                <>
+                  {showBubbleStack && (
+                    <AnswerTranscript
+                      attempt={term.attempts[0]}
+                      onComplete={() => {
+                        goTo("feedbackHint");
+                        setHasSeenFeedback(true);
+                      }}
+                    />
+                  )}
+                  {(screen === "feedbackHint" || isRetryScreen) && <AnswerFeedback />}
+                  {screen === "processing" && (
+                    // Same ProcessingAnswer component, same 4s cap and pulsing-text
+                    // animation, as the first attempt's S7 (Figma node 63:3787) —
+                    // reused as-is per the user's instruction, just with the
+                    // isRetryScreen-driven bubble stack above it now that this can
+                    // also be reached from a retry's Submit (Figma node 68:7731).
+                    // On a retry (isRetryScreen), the 4s cap hands off to the
+                    // retry's own transcript bubble (Figma node 68:8055) instead
+                    // of the first-attempt-only "transcript" screen — and per the
+                    // user's instruction this handoff is automatic, not triggered
+                    // by any tap.
+                    <ProcessingAnswer
+                      onComplete={() =>
+                        goTo(isRetryScreen ? "secondTranscript" : "transcript")
+                      }
+                    />
+                  )}
+                  {showSecondTranscript && (
+                    // The retry's own transcript bubble (Figma node 68:8055, "2nd
+                    // transcript") — same AnswerTranscript component and fade-in
+                    // as the first attempt's, per the user's instruction to reuse
+                    // that animation, just seeded with SECOND_ATTEMPT's copy.
+                    // Now auto-advances to "secondFeedback" after its own 1s
+                    // timer, matching the first attempt's
+                    // transcript -> feedback/hint handoff (AnswerTranscript's
+                    // AUTO_ADVANCE_MS) — per the user's instruction that this new
+                    // CORRECT bubble (Figma node 68:7899) "follow the same
+                    // animation and timing pattern" as the earlier partial/hint
+                    // stack.
+                    <AnswerTranscript
+                      attempt={SECOND_ATTEMPT}
+                      onComplete={() => {
+                        goTo("secondFeedback");
+                        setSessionXp(term.xpValue);
+                      }}
+                    />
+                  )}
+                  {screen === "secondFeedback" && (
+                    // The CORRECT feedback bubble (Figma node 68:7899) that
+                    // follows the retry's own transcript — same fade-in timing
+                    // (`soft`) as AnswerFeedback's bubbles, reached automatically
+                    // once AnswerTranscript's 1s auto-advance fires above.
+                    <CorrectFeedback />
+                  )}
+                </>
+              ) : null
+            }
+          >
+            {/* Plain mount-triggered entrance animation per screen, not
+                AnimatePresence — the same freeze bug found and worked around
+                at the top-level mode switch and in PlaybackReview's
+                transcribing swap turned out to affect this inner screen
+                switcher too: a lingering, ghosted-but-still-partially-visible
+                previous screen (confirmed via computed opacity — a stuck
+                ancestor at opacity:0 with descendants still individually at
+                opacity:1, so text bled through translucent rather than being
+                cleanly invisible) whenever the next transition fired before
+                the exit had settled. Each screen now just fades/rises in on
+                its own mount; the outgoing one disappears instantly instead
+                of exit-animating, but nothing lingers or bleeds through. */}
+            {screen === "termPrompt" && (
+              <motion.div
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={soft}
+              >
+                <TermPrompt
+                  term={term}
+                  onMicPress={() => goTo("recording")}
+                  onSkip={() => console.log("skip tapped — S9 not built yet")}
+                  onTypeInstead={() => goTo("typeInstead")}
                 />
-              )}
-              {(screen === "feedbackHint" || isRetryScreen) && <AnswerFeedback />}
-              {screen === "processing" && (
-                // Same ProcessingAnswer component, same 4s cap and pulsing-text
-                // animation, as the first attempt's S7 (Figma node 63:3787) —
-                // reused as-is per the user's instruction, just with the
-                // isRetryScreen-driven bubble stack above it now that this can
-                // also be reached from a retry's Submit (Figma node 68:7731).
-                // On a retry (isRetryScreen), the 4s cap hands off to the
-                // retry's own transcript bubble (Figma node 68:8055) instead
-                // of the first-attempt-only "transcript" screen — and per the
-                // user's instruction this handoff is automatic, not triggered
-                // by any tap.
-                <ProcessingAnswer
-                  onComplete={() =>
-                    goTo(isRetryScreen ? "secondTranscript" : "transcript")
+              </motion.div>
+            )}
+
+            {screen === "recording" && (
+              <motion.div
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={soft}
+                // pt-4 (16px) only on the retry path (isRetryScreen) — matches
+                // RetryPrompt's own pt-4 above the "Tap to try again" label, so
+                // the gap from the hint bubble to whatever comes next (that
+                // label, or here, RecordingActive's top border stroke) stays
+                // the same 16px either way. The very-first recording (S5, no
+                // feedback bubbles yet) gets no wrapper padding, leaving that
+                // screen exactly as it was — this only affects the reused "2nd
+                // attempt" case (Figma node 70:4304).
+                className={isRetryScreen ? "pt-4" : undefined}
+              >
+                <RecordingActive
+                  onCancel={() =>
+                    goTo(hasSeenFeedback ? "feedbackHint" : "termPrompt")
+                  }
+                  onStop={() => goTo("playbackReview")}
+                />
+              </motion.div>
+            )}
+
+            {screen === "playbackReview" && (
+              <motion.div
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={soft}
+                // Same pt-4-on-retry treatment as "recording" above, and for
+                // the same reason: this is the exact same PlaybackReview
+                // bottomCta used for the first attempt (Figma node 63:3538 /
+                // images/initial submit.png) — reused as-is, not rebuilt — for
+                // the retry's post-record screen (Figma node 108:7503), just
+                // with 16px of space added above it once the bubble log is
+                // present.
+                className={isRetryScreen ? "pt-4" : undefined}
+              >
+                <PlaybackReview
+                  transcript={
+                    isRetryScreen
+                      ? SECOND_ATTEMPT.transcript
+                      : term.attempts[0].transcript
+                  }
+                  onSubmit={() => goTo("processing")}
+                  onRecordAgain={() => goTo("recording")}
+                  onTypeInstead={() => goTo("typeInstead")}
+                />
+              </motion.div>
+            )}
+
+            {screen === "typeInstead" && (
+              // The can't-speak text fallback (motion-guide.md's own
+              // special-cased recipe): slides up from the bottom, so it
+              // reads as a native sheet being offered rather than pushed to
+              // like the rest of the flow. TypeInstead.tsx itself only owns
+              // the grabber handle + its own content; this wrapper owns the
+              // actual slide motion. Plain mount-only entrance now (see the
+              // note above this block) — `sheetVariants`/`sheet` transition
+              // no longer used here since there's no exit half anymore.
+              <motion.div
+                initial={
+                  prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: "100%" }
+                }
+                animate={{ opacity: 1, y: 0 }}
+                transition={sheet}
+                // Submitting a typed answer joins the same S7 processing
+                // screen (Figma node 63:3787) as a recorded one (PlaybackReview's
+                // onSubmit, above) — same ProcessingAnswer component, same 4s
+                // cap, same hardcoded transcript afterwards, since
+                // session-data.ts's mocked script doesn't distinguish how the
+                // answer arrived. Reached after the first hint too (Figma
+                // nodes matching the user's two "type instead after hint"
+                // reference screenshots) — in that case isRetryScreen is
+                // already true, so the same ProcessingAnswer/isRetryScreen
+                // branch below hands off to the retry-path processing screen
+                // (Figma node 68:7731) instead of the first-attempt one, with
+                // no extra wiring needed here. Same pt-4 treatment as
+                // "recording"/"playbackReview" above once the bubble stack is
+                // present, and "Use voice instead" returns to whichever mic
+                // screen matches — RetryPrompt (feedbackHint) on a retry,
+                // TermPrompt on the very first attempt — same pattern as
+                // RecordingActive's onCancel above.
+                className={isRetryScreen ? "pt-4" : undefined}
+              >
+                <TypeInstead
+                  onSubmit={() => goTo("processing")}
+                  onUseVoiceInstead={() =>
+                    goTo(hasSeenFeedback ? "feedbackHint" : "termPrompt")
                   }
                 />
-              )}
-              {showSecondTranscript && (
-                // The retry's own transcript bubble (Figma node 68:8055, "2nd
-                // transcript") — same AnswerTranscript component and fade-in
-                // as the first attempt's, per the user's instruction to reuse
-                // that animation, just seeded with SECOND_ATTEMPT's copy.
-                // Now auto-advances to "secondFeedback" after its own 1s
-                // timer, matching the first attempt's
-                // transcript -> feedback/hint handoff (AnswerTranscript's
-                // AUTO_ADVANCE_MS) — per the user's instruction that this new
-                // CORRECT bubble (Figma node 68:7899) "follow the same
-                // animation and timing pattern" as the earlier partial/hint
-                // stack.
-                <AnswerTranscript
-                  attempt={SECOND_ATTEMPT}
-                  onComplete={() => goTo("secondFeedback")}
-                />
-              )}
-              {screen === "secondFeedback" && (
-                // The CORRECT feedback bubble (Figma node 68:7899) that
-                // follows the retry's own transcript — same fade-in timing
-                // (`soft`) as AnswerFeedback's bubbles, reached automatically
-                // once AnswerTranscript's 1s auto-advance fires above.
-                <CorrectFeedback />
-              )}
-            </>
-          ) : null
-        }
-      >
-        {/* `popLayout` (not `wait`) so the entering screen doesn't wait for
-            the exiting one to finish first — SessionShell's bottomRef
-            ResizeObserver auto-scrolls on height changes (see that file),
-            and `popLayout` removes the exiting element from layout flow
-            immediately rather than the whole group briefly double-stacking. */}
-        <AnimatePresence mode="popLayout" initial={false}>
-          {screen === "termPrompt" && (
-            <motion.div
-              key="termPrompt"
-              variants={pushVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={soft}
-            >
-              <TermPrompt
-                term={term}
-                onMicPress={() => goTo("recording")}
-                onSkip={() => console.log("skip tapped — S9 not built yet")}
-                onTypeInstead={() => goTo("typeInstead")}
-              />
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
-          {screen === "recording" && (
-            <motion.div
-              key="recording"
-              variants={pushVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={soft}
-              // pt-4 (16px) only on the retry path (isRetryScreen) — matches
-              // RetryPrompt's own pt-4 above the "Tap to try again" label, so
-              // the gap from the hint bubble to whatever comes next (that
-              // label, or here, RecordingActive's top border stroke) stays
-              // the same 16px either way. The very-first recording (S5, no
-              // feedback bubbles yet) gets no wrapper padding, leaving that
-              // screen exactly as it was — this only affects the reused "2nd
-              // attempt" case (Figma node 70:4304).
-              className={isRetryScreen ? "pt-4" : undefined}
-            >
-              <RecordingActive
-                onCancel={() =>
-                  goTo(hasSeenFeedback ? "feedbackHint" : "termPrompt")
-                }
-                onStop={() => goTo("playbackReview")}
-              />
-            </motion.div>
-          )}
-
-          {screen === "playbackReview" && (
-            <motion.div
-              key="playbackReview"
-              variants={pushVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={soft}
-              // Same pt-4-on-retry treatment as "recording" above, and for
-              // the same reason: this is the exact same PlaybackReview
-              // bottomCta used for the first attempt (Figma node 63:3538 /
-              // images/initial submit.png) — reused as-is, not rebuilt — for
-              // the retry's post-record screen (Figma node 108:7503), just
-              // with 16px of space added above it once the bubble log is
-              // present.
-              className={isRetryScreen ? "pt-4" : undefined}
-            >
-              <PlaybackReview
-                transcript={
-                  isRetryScreen
-                    ? SECOND_ATTEMPT.transcript
-                    : term.attempts[0].transcript
-                }
-                onSubmit={() => goTo("processing")}
-                onRecordAgain={() => goTo("recording")}
-                onTypeInstead={() => goTo("typeInstead")}
-              />
-            </motion.div>
-          )}
-
-          {screen === "typeInstead" && (
-            // The can't-speak text fallback (motion-guide.md's own
-            // special-cased recipe): slides up from the bottom with `sheet`
-            // instead of the generic side-push every other screen uses, so
-            // it reads as a native sheet being offered rather than pushed to
-            // like the rest of the flow. TypeInstead.tsx itself only owns
-            // the grabber handle + its own content; this wrapper owns the
-            // actual slide motion.
-            <motion.div
-              key="typeInstead"
-              variants={sheetVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={sheet}
-              // Submitting a typed answer joins the same S7 processing
-              // screen (Figma node 63:3787) as a recorded one (PlaybackReview's
-              // onSubmit, above) — same ProcessingAnswer component, same 4s
-              // cap, same hardcoded transcript afterwards, since
-              // session-data.ts's mocked script doesn't distinguish how the
-              // answer arrived. Reached after the first hint too (Figma
-              // nodes matching the user's two "type instead after hint"
-              // reference screenshots) — in that case isRetryScreen is
-              // already true, so the same ProcessingAnswer/isRetryScreen
-              // branch below hands off to the retry-path processing screen
-              // (Figma node 68:7731) instead of the first-attempt one, with
-              // no extra wiring needed here. Same pt-4 treatment as
-              // "recording"/"playbackReview" above once the bubble stack is
-              // present, and "Use voice instead" returns to whichever mic
-              // screen matches — RetryPrompt (feedbackHint) on a retry,
-              // TermPrompt on the very first attempt — same pattern as
-              // RecordingActive's onCancel above.
-              className={isRetryScreen ? "pt-4" : undefined}
-            >
-              <TypeInstead
-                onSubmit={() => goTo("processing")}
-                onUseVoiceInstead={() =>
-                  goTo(hasSeenFeedback ? "feedbackHint" : "termPrompt")
-                }
-              />
-            </motion.div>
-          )}
-
-          {screen === "feedbackHint" && (
-            <motion.div
-              key="feedbackHint"
-              variants={pushVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={soft}
-            >
-              <RetryPrompt
-                onMicPress={() => goTo("recording")}
-                onSkip={() => console.log("skip tapped — S9 not built yet")}
-                onTypeInstead={() => goTo("typeInstead")}
-              />
-            </motion.div>
-          )}
-
-          {screen === "secondFeedback" && (
-            <motion.div
-              key="secondFeedback"
-              variants={pushVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={soft}
-              // Once the retry lands on the CORRECT bubble (Figma node
-              // 68:7899), the bottom control becomes a single primary CTA to
-              // move on — S9 ("advance to next term") isn't wired up yet, so
-              // this is a stub per the established console.log convention.
-              // Classes match PlaybackReview's own "Submit" button exactly,
-              // per the user's instruction to reuse that pattern rather than
-              // invent a new button style. Outer padding matches
-              // RetryPrompt's own wrapper (px-7 pb-7 pt-4) rather than
-              // PlaybackReview's bordered panel, since there's no
-              // recording-panel content here — just the single primary CTA,
-              // sitting at the same rhythm as every other bottomCta.
-              className="flex w-full shrink-0 flex-col items-center px-7 pb-7 pt-4"
-            >
-              {/* This commits the student to ending the term and moving on —
-                  same "highest-stakes tap" reasoning as PlaybackReview's
-                  Submit, and previously gave the same zero tactile feedback.
-                  Same whileTap+snappy recipe as Submit. This is a top-level
-                  screen swap (endSummary is a whole different return branch,
-                  not part of this push/sheet system), so it stays a plain
-                  setScreen, not goTo. */}
-              <motion.button
-                type="button"
-                onClick={() => setScreen("endSummary")}
-                whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
-                transition={snappy}
-                className="flex h-14 w-full items-center justify-center rounded-full bg-interactive-primary text-xl font-bold text-interactive-onprimary shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)]"
+            {screen === "feedbackHint" && (
+              <motion.div
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={soft}
               >
-                Next question
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </SessionShell>
+                <RetryPrompt
+                  onMicPress={() => goTo("recording")}
+                  onSkip={() => console.log("skip tapped — S9 not built yet")}
+                  onTypeInstead={() => goTo("typeInstead")}
+                />
+              </motion.div>
+            )}
+
+            {screen === "secondFeedback" && (
+              <motion.div
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={soft}
+                // Once the retry lands on the CORRECT bubble (Figma node
+                // 68:7899), the bottom control becomes a single primary CTA to
+                // move on — S9 ("advance to next term") isn't wired up yet, so
+                // this is a stub per the established console.log convention.
+                // Classes match PlaybackReview's own "Submit" button exactly,
+                // per the user's instruction to reuse that pattern rather than
+                // invent a new button style. Outer padding matches
+                // RetryPrompt's own wrapper (px-7 pb-7 pt-4) rather than
+                // PlaybackReview's bordered panel, since there's no
+                // recording-panel content here — just the single primary CTA,
+                // sitting at the same rhythm as every other bottomCta.
+                className="flex w-full shrink-0 flex-col items-center px-7 pb-7 pt-4"
+              >
+                {/* This commits the student to ending the term and moving on —
+                    same "highest-stakes tap" reasoning as PlaybackReview's
+                    Submit, and previously gave the same zero tactile feedback.
+                    Same whileTap+snappy recipe as Submit. Crossing into
+                    endSummary now gets its own top-level mode-switch
+                    transition even though this is a plain `setScreen`, not
+                    `goTo` — `goTo` only exists to keep a hook for the inner
+                    session screens' own entrance transition. */}
+                <motion.button
+                  type="button"
+                  onClick={() => setScreen("endSummary")}
+                  whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
+                  transition={snappy}
+                  className="flex h-14 w-full items-center justify-center rounded-full bg-interactive-primary text-xl font-bold text-interactive-onprimary shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)]"
+                >
+                  Next question
+                </motion.button>
+              </motion.div>
+            )}
+          </SessionShell>
+        </motion.div>
+      )}
     </div>
   );
 }

@@ -136,7 +136,7 @@ export default function EndSummary() {
       animate="show"
       className="flex h-full flex-col"
     >
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto no-scrollbar">
         <div className="flex flex-col items-center gap-2 px-4 pb-4 pt-8">
           <motion.img
             variants={item}

@@ -46,9 +46,17 @@ export default function RevealedFeedback() {
           keeps this bubble's right edge aligned with the others instead of
           stretching under the transcript bubble's avatar above it. */}
       <div className="max-w-[294px] rounded-tl-2xl rounded-tr-2xl rounded-bl-md rounded-br-2xl border border-accent-blue-bold bg-accent-blue-bold/15 p-4">
-        <span className="inline-block rounded-lg bg-accent-blue-bold/20 px-2 py-0.5 text-xs font-semibold tracking-wide text-accent-blue-onsubtle">
+        {/* Same delayed scale-in as the other two outcome badges — same
+            weight for a miss as a win, per motion-guide.md's "the animation
+            is the same; the content differs." */}
+        <motion.span
+          initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ...gentle, delay: prefersReducedMotion ? 0 : 0.15 }}
+          className="inline-block rounded-lg bg-accent-blue-bold/20 px-2 py-0.5 text-xs font-semibold tracking-wide text-accent-blue-onsubtle"
+        >
           HERE’S THE ANSWER
-        </span>
+        </motion.span>
         <p className="mt-2 text-base text-text-primary">{REVEALED_LEAD}</p>
         <p className="mt-3 text-base text-text-primary">{REVEALED_ANSWER}</p>
       </div>

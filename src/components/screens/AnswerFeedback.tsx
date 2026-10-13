@@ -98,9 +98,19 @@ export default function AnswerFeedback() {
         transition={showHint ? soft : quickHide}
         className="max-w-[294px] rounded-tl-2xl rounded-tr-2xl rounded-bl-md rounded-br-2xl border border-feedback-partial bg-feedback-partial/15 p-4"
       >
-        <span className="inline-block rounded-lg bg-feedback-warning-chip/20 px-2 py-0.5 text-xs font-semibold tracking-wide text-feedback-warning">
+        {/* The bubble around this already lands with `gentle`, but the badge
+            itself — the actual verdict — used to just ride along inside it
+            with no beat of its own. A small delayed scale-in gives the
+            result its own "here's what happened" moment, the way the XP
+            line in EndSummary gets separate weight from its siblings. */}
+        <motion.span
+          initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ...gentle, delay: prefersReducedMotion ? 0 : 0.15 }}
+          className="inline-block rounded-lg bg-feedback-warning-chip/20 px-2 py-0.5 text-xs font-semibold tracking-wide text-feedback-warning"
+        >
           PARTIALLY RIGHT
-        </span>
+        </motion.span>
         <p className="mt-2 text-base text-text-primary">
           {FEEDBACK_LEAD} <span className="font-bold">{FEEDBACK_QUESTION}</span>
         </p>

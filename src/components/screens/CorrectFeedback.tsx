@@ -42,9 +42,17 @@ export default function CorrectFeedback() {
           keeps this bubble's right edge aligned with the others instead of
           stretching under the transcript bubble's avatar above it. */}
       <div className="max-w-[294px] rounded-tl-2xl rounded-tr-2xl rounded-bl-md rounded-br-2xl border border-highlight-recognized bg-feedback-correct/15 p-4">
-        <span className="inline-block rounded-lg bg-feedback-correct/20 px-2 py-0.5 text-xs font-semibold tracking-wide text-highlight-recognized">
+        {/* Same delayed scale-in as AnswerFeedback's badge — the verdict
+            gets its own small beat instead of just riding along with the
+            bubble's `gentle` entrance. */}
+        <motion.span
+          initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ...gentle, delay: prefersReducedMotion ? 0 : 0.15 }}
+          className="inline-block rounded-lg bg-feedback-correct/20 px-2 py-0.5 text-xs font-semibold tracking-wide text-highlight-recognized"
+        >
           CORRECT
-        </span>
+        </motion.span>
         <p className="mt-2 text-base text-text-primary">{FEEDBACK_TEXT}</p>
       </div>
     </motion.div>
